@@ -497,4 +497,4 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
 
 
 
-![image](http://otqn9ztu1.bkt.clouddn.com/ffmpeg%E6%92%AD%E6%94%BE.gif)
+![image](![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180905/K9L81K7JK5.gif))
