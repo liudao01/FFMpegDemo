@@ -128,7 +128,7 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
             //判断是否读完
             if (got_frame) {
                 LOGE("解码第 %d 个 frame ", frame_count++);
-                //绘制之前 需要配置一些信息. 宽高 输出的格式
+                //绘制之前 需要配置一些信息. 宽高 输出的格式  可以修改 pCodecCtx->width 和height
                 ANativeWindow_setBuffersGeometry(nativeWindow, pCodecCtx->width, pCodecCtx->height,
                                                  WINDOW_FORMAT_RGBA_8888);//AV_PIX_FMT_RGBA  这个也是上面转化的格式
 
@@ -146,7 +146,7 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
                 uint8_t *dst = static_cast<uint8_t *>(outBuffer.bits);
 
                 //拿到一行有多少字节  为什么需要×4  rgba
-                int destStride = outBuffer.width * 4;//这里就是window的一行数据
+                int destStride = outBuffer.stride * 4;//这里就是window的一行数据 字节
 
                 //获取rgbframe(像素数据)的 首地址
                 uint8_t *src = rgbFrame->data[0];
@@ -169,7 +169,6 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
                 ANativeWindow_unlockAndPost(nativeWindow);
                 //画面绘制完之后 画面停止16毫秒   usleep在#include <unistd.h> 中
                 usleep(1000 * 16);
-
             }
         }
         //释放
