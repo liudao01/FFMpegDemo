@@ -155,6 +155,7 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
                 LOGE("实际内存第一行一行的数量 = %d", srcStride);
                 //把rgbframe拷贝到缓冲区  到解码的高度
                 for (int i = 0; i < pCodecCtx->height; ++i) {
+
                     //dest 目的地址 src 源地址    n 数量
                     //void *memcpy(void *dest, const void *src, size_t n);
                     //从源src所指的内存地址的起始位置 开始拷贝n个字节 到目标dest 所指的内存地址的起始位置中
