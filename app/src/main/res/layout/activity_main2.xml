@@ -28,7 +28,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="mPlay"
-            android:text="开始播放" />
+            android:text="开始播放视频" />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="mPlayAudio"
+            android:text="开始转化音频" />
 
     </LinearLayout>
 </RelativeLayout>

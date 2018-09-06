@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Mainactivity";
     // Used to load the 'native-lib' library on application startup.
     MyVideoView videoView;
+    AudioPlayer audioPlayer;
     private Spinner sp_video;
 
     @Override
@@ -59,6 +60,13 @@ public class MainActivity extends AppCompatActivity {
         String input = new File(Environment.getExternalStorageDirectory(), video).getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
         videoView.player(input);
+    }
+    public void mPlayAudio(View view) {
+        audioPlayer = new AudioPlayer();
+        String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
+        String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
+        Log.d(TAG, "onCreate: 文件路径 " + input);
+        audioPlayer.changeSound(input,output);
     }
 
     public void requestPermission() {
@@ -101,4 +109,16 @@ public class MainActivity extends AppCompatActivity {
      */
 //    public native String stringFromJNI();
     public native void openVideo(String inputStr, String outStr);
+
+    static {
+        System.loadLibrary("native-lib");
+        System.loadLibrary("avcodec-56");
+        System.loadLibrary("avfilter-5");
+        System.loadLibrary("avformat-56");
+        System.loadLibrary("avutil-54");
+        System.loadLibrary("swresample-1");
+        System.loadLibrary("swscale-3");
+        System.loadLibrary("native-lib");
+
+    }
 }
