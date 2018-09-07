@@ -25,7 +25,7 @@ extern "C" {
 extern "C"
 JNIEXPORT void JNICALL
 Java_androidrn_ffmpegdemo_AudioPlayer_changeSound(JNIEnv *env, jobject instance, jstring input_,
-                                                jstring output_) {
+                                                  jstring output_) {
     const char *input = env->GetStringUTFChars(input_, 0);
     const char *output = env->GetStringUTFChars(output_, 0);
 
@@ -99,7 +99,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_changeSound(JNIEnv *env, jobject instance,
     int length = 0;
 
     //定义缓冲区输出的  需要多大的采样率  采样 44100  多少个字节.  双通道需要乘以2
-    uint8_t  *out_buffer =  static_cast<uint8_t *>(av_malloc(44100 * 2));//一秒的缓冲区数量
+    uint8_t *out_buffer = static_cast<uint8_t *>(av_malloc(44100 * 2));//一秒的缓冲区数量
 
 
     /**
@@ -115,7 +115,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_changeSound(JNIEnv *env, jobject instance,
     //输出声道布局
     uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;//立体声
     //输出采样位数 16位 现在基本都是16位  位数越高 声音越清晰
-    enum  AVSampleFormat out_formart = AV_SAMPLE_FMT_S16;
+    enum AVSampleFormat out_formart = AV_SAMPLE_FMT_S16;
     //输出的采样率 必须与输入的相同
     int out_sample_rate = pCodecCtx->sample_rate;
 
@@ -133,32 +133,39 @@ Java_androidrn_ffmpegdemo_AudioPlayer_changeSound(JNIEnv *env, jobject instance,
     //求出通道数
     int out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
 
+    int count = 0;
     //读取frame
-    while (av_read_frame(pContext,packet)>=0){
-        if(packet->stream_index == audio_stream_ids){
+    while (av_read_frame(pContext, packet) >= 0) {
+        if (packet->stream_index == audio_stream_ids) {
             //解码  现在编码格式frame 需要转化成pcm
-            avcodec_decode_audio4(pCodecCtx, frame, &got_frame, packet);
-            if(got_frame){
+            int ret = avcodec_decode_audio4(pCodecCtx, frame, &got_frame, packet);
+            LOGE("正在解码 %d", count++);
+            if (ret < 0) {
+                LOGE("解码完成");
+            }
+            //解码一帧
+            if (got_frame > 0) {
                 //真正的解码
                 LOGE("开始解码");
                 //转换得到out_buffer
                 swr_convert(swrContext, &out_buffer, 44100 * 2,
-                            reinterpret_cast<const uint8_t **>(frame->data), frame->nb_samples);
+                            (const uint8_t **) (frame->data), frame->nb_samples);
 
                 //求缓冲区实际的大小  通道数  frame->nb_samples 采样的点
-                int size = av_samples_get_buffer_size(NULL,out_channer_nb,frame->nb_samples,
-                                           AV_SAMPLE_FMT_S16,1);
+                int size = av_samples_get_buffer_size(NULL, out_channer_nb, frame->nb_samples,
+                                                      AV_SAMPLE_FMT_S16, 1);
                 //写入到文件
-                fwrite(out_buffer,1,size,pcm_file);
+                fwrite(out_buffer, 1, size, pcm_file);
             }
         }
 
     }
 
-
     //回收
     fclose(pcm_file);
     av_frame_free(&frame);
+    av_free(out_buffer);
+    swr_free(&swrContext);
     avcodec_close(pCodecCtx);
     avformat_free_context(pContext);
 
