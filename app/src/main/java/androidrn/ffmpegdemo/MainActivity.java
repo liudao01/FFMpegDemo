@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -16,13 +17,16 @@ import com.hjq.permissions.XXPermissions;
 import java.io.File;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Mainactivity";
     // Used to load the 'native-lib' library on application startup.
     MyVideoView videoView;
     AudioPlayer audioPlayer;
     private Spinner sp_video;
+    private Button btAudio;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 //        TextView tv = (TextView) findViewById(R.id.sample_text);
 //        tv.setText(stringFromJNI());
         isHasPermission();
-
+        btAudio = findViewById(R.id.bt_audio);
         videoView = findViewById(R.id.surface);
         sp_video = findViewById(R.id.sp_video);
         //多种格式的视频列表
@@ -44,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate: sp_video " + sp_video);
         Log.d(TAG, "onCreate: adapter " + adapter);
         sp_video.setAdapter(adapter);
+
+        btAudio.setOnClickListener(this);
     }
 
     public void isHasPermission() {
@@ -55,19 +61,39 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 播放视频
+     * @param view
+     */
     public void mPlay(View view) {
         String video = sp_video.getSelectedItem().toString();
         String input = new File(Environment.getExternalStorageDirectory(), video).getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
         videoView.player(input);
     }
-    public void mPlayAudio(View view) {
+
+    /**
+     * 转化音频为pcm
+     */
+    public void mPlayChangeAudio() {
         audioPlayer = new AudioPlayer();
         String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
         String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
         audioPlayer.changeSound(input,output);
     }
+    /**
+     * 播放音频
+     */
+    public void mPlayAudio() {
+        audioPlayer = new AudioPlayer();
+        String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
+        String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
+        Log.d(TAG, "onCreate: 文件路径 " + input);
+        audioPlayer.playSound(input,output);
+    }
+
+
 
     public void requestPermission() {
         XXPermissions.with(this)
@@ -120,5 +146,18 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("swscale-3");
         System.loadLibrary("native-lib");
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.bt_audio:
+                //转化音频
+//                mPlayChangeAudio();
+                //音频播放
+                mPlayAudio();
+
+                break;
+        }
     }
 }

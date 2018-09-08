@@ -21,6 +21,183 @@ extern "C" {
 #define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jnilib",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
 
+//mp3 声音 AudioTrack 播放
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_AudioPlayer_playSound(JNIEnv *env, jobject instance, jstring input_,
+                                                jstring output_) {
+    const char *input = env->GetStringUTFChars(input_, 0);
+    const char *output = env->GetStringUTFChars(output_, 0);
+
+    //前面和之前一样 获取输入的信息 但是现在是找到音频的AVMEDIA_TYPE_AUDIO
+    // TODO
+    //无论编码还是解码 都要调用这个 注册各大组件
+    av_register_all();
+
+    //获取AVFormatContext  比特率 时长 文件路径 流的信息(nustream) 都封装在这里面
+    AVFormatContext *pContext = avformat_alloc_context();
+
+    //AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options
+    //上下文  文件名  打开文件格式 获取信息(AVDictionary)  凡是AVDictionary字典 都是获取视频文件信息
+    if (avformat_open_input(&pContext, input, NULL, NULL) < 0) {
+        LOGE("打开失败");
+        return;
+    }
+
+    //给nbstram填充信息
+    if (avformat_find_stream_info(pContext, NULL) < 0) {
+        LOGE("获取信息失败");
+        return;
+    }
+
+    //找到视频流
+    int audio_stream_ids = -1;
+    for (int i = 0; i < pContext->nb_streams; ++i) {
+        LOGE("循环 %d", i);
+        //如果填充的视频流信息 -> 编解码,解码器 -> 流的类型 == 视频的类型
+        //codec 每一个流 对应的解码上下文 codec_type 流的类型
+        if (pContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+            audio_stream_ids = i;
+            LOGE("找到音频id %d", i);
+            break;
+        }
+    }
+
+    //解码器. mp3的解码器 解码器
+    // ----------  获取到解码器上下文 获取视音频解码器
+    AVCodecContext *pCodecCtx = pContext->streams[audio_stream_ids]->codec;
+    LOGE("获取解码器上下文")
+    //----------解码器
+    AVCodec *pCodex = avcodec_find_decoder(pCodecCtx->codec_id);
+    LOGE("获取解码器");
+    //打开解码器  为什么avcodec_open2 版本升级的原因
+    if (avcodec_open2(pCodecCtx, pCodex, NULL) < 0) {
+        LOGE("解码失败");
+        return;
+    }
+
+    //得到解封装 读取 解封每一帧 读取每一帧的压缩数据
+    //初始化avpacket 分配内存  FFMpeg 没有自动分配内存 必须手动分匹配手动释放  不过有分配函数
+    AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+
+    //初始化AVFrame
+    AVFrame *frame = av_frame_alloc();
+
+    //mp3 里面所包含的编码格式 转化成pcm
+    //#include <libswresample/swresample.h>
+    SwrContext *swrContext = swr_alloc();//获取转换的上下文
+
+    int frame_count = 0;
+
+    //目的转化成YUV  写到一个文件里面去 声明文件
+    FILE *pcm_file = fopen(output, "wb");
+
+
+    //AVFormatContext *s, AVPacket *pkt  上下文,avpacket 是数据包的意思
+    //packet 入参
+    int got_frame;
+
+    int length = 0;
+
+    //定义缓冲区输出的  需要多大的采样率  采样 44100  多少个字节.  双通道需要乘以2
+    uint8_t *out_buffer = static_cast<uint8_t *>(av_malloc(44100 * 2));//一秒的缓冲区数量
+
+
+    /**
+     * struct SwrContext *swr_alloc_set_opts(struct SwrContext *s,
+     *                                  //输出的
+                                      int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate,
+                                      //输入的
+                                      int64_t  in_ch_layout, enum AVSampleFormat  in_sample_fmt, int  in_sample_rate,
+                                      //偏移量
+                                      int log_offset, void *log_ctx);
+
+     */
+    //输出声道布局
+    uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;//立体声
+    //输出采样位数 16位 现在基本都是16位  位数越高 声音越清晰
+    enum AVSampleFormat out_formart = AV_SAMPLE_FMT_S16;
+    //输出的采样率 必须与输入的相同
+    int out_sample_rate = pCodecCtx->sample_rate;
+
+
+
+    //https://blog.csdn.net/explorer_day/article/details/76332556  文档
+    //swr_alloc_set_opts将PCM源文件的采样格式转换为自己希望的采样格式
+    swr_alloc_set_opts(swrContext, out_ch_layout, out_formart, out_sample_rate,
+                       pCodecCtx->channel_layout, pCodecCtx->sample_fmt, pCodecCtx->sample_rate,
+                       0, NULL);
+
+    //初始化转换器
+    swr_init(swrContext);
+
+    //求出通道数
+    int out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
+
+    //反射 获取jclass
+    jclass audio_play = env->GetObjectClass(instance);
+    //反射得到方法mm   javap -s 包名类名  获取方法的签名  一个技巧 来到build 下面 找到.class 文件 这样不用自己生成.class文件
+    jmethodID createAudio = env->GetMethodID(audio_play, "createAudio", "(II)V");
+    //反射调用creatAudio
+    env->CallVoidMethod(instance, createAudio, 44100, out_channer_nb);
+    LOGE("反射调用creatAudio");
+    jmethodID audio_write = env->GetMethodID(audio_play, "playTrack", "([BI)V");
+    LOGE("获取audio_write");
+    int count = 0;
+    //读取frame
+    while (av_read_frame(pContext, packet) >= 0) {
+        if (packet->stream_index == audio_stream_ids) {
+            //解码  现在编码格式frame 需要转化成pcm
+            int ret = avcodec_decode_audio4(pCodecCtx, frame, &got_frame, packet);
+            LOGE("正在解码 %d", count++);
+            if (ret < 0) {
+                LOGE("解码完成");
+            }
+            //解码一帧
+            if (got_frame > 0) {
+                //真正的解码
+                LOGE("开始解码");
+                //转换得到out_buffer
+                swr_convert(swrContext, &out_buffer, 44100 * 2,
+                            (const uint8_t **) (frame->data), frame->nb_samples);
+
+                LOGE("转换得到out_buffer");
+                //求缓冲区实际的大小  通道数  frame->nb_samples 采样的点
+                int size = av_samples_get_buffer_size(NULL, out_channer_nb, frame->nb_samples,
+                                                      AV_SAMPLE_FMT_S16, 1);
+                LOGE("求缓冲区实际的大小 %d", size);
+                //把缓冲区的数据传给java层.
+                jbyteArray audio_sample_array = env->NewByteArray(size);
+                LOGE("获取byte数组")
+//                env->SetByteArrayRegion(audio_sample_array, 0, size, (const jbyte *) (out_buffer));
+                env->SetByteArrayRegion(audio_sample_array, 0, size, (const jbyte *) out_buffer);
+                LOGE("转换byte数组")
+                //调用
+                env->CallVoidMethod(instance, audio_write, audio_sample_array, size);
+                LOGE("调用方法")
+                env->DeleteLocalRef(audio_sample_array);
+                //写入到文件
+                //  fwrite(out_buffer, 1, size, pcm_file);
+            }
+        }
+
+    }
+    LOGE("完成")
+
+    //回收
+    fclose(pcm_file);
+    av_frame_free(&frame);
+    av_free(out_buffer);
+    swr_free(&swrContext);
+    avcodec_close(pCodecCtx);
+    avformat_free_context(pContext);
+
+    env->ReleaseStringUTFChars(input_, input);
+    env->ReleaseStringUTFChars(output_, output);
+
+    env->ReleaseStringUTFChars(input_, input);
+    env->ReleaseStringUTFChars(output_, output);
+}
 //mp3声音转化pcm
 extern "C"
 JNIEXPORT void JNICALL
@@ -134,6 +311,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_changeSound(JNIEnv *env, jobject instance,
     int out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
 
     int count = 0;
+    //输出文件
     //读取frame
     while (av_read_frame(pContext, packet) >= 0) {
         if (packet->stream_index == audio_stream_ids) {
