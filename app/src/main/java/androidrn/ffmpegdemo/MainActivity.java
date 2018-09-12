@@ -153,9 +153,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()){
             case R.id.bt_audio:
                 //转化音频
-//                mPlayChangeAudio();
+                mPlayChangeAudio();
                 //音频播放
-                mPlayAudio();
+//                mPlayAudio();
 
                 break;
         }

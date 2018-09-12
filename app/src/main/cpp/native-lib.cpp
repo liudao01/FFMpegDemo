@@ -16,11 +16,20 @@ extern "C" {
 #include <android/native_window_jni.h>
 #include <unistd.h>
 #include <libswresample/swresample.h>
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
 }
 
 #define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jnilib",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
+//openSL ES 播放音频
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instance) {
 
+    // TODO
+
+}
 //mp3 声音 AudioTrack 播放
 extern "C"
 JNIEXPORT void JNICALL
@@ -94,8 +103,6 @@ Java_androidrn_ffmpegdemo_AudioPlayer_playSound(JNIEnv *env, jobject instance, j
 
 
     //AVFormatContext *s, AVPacket *pkt  上下文,avpacket 是数据包的意思
-    //packet 入参
-    int got_frame;
 
     int length = 0;
 
@@ -144,6 +151,9 @@ Java_androidrn_ffmpegdemo_AudioPlayer_playSound(JNIEnv *env, jobject instance, j
     jmethodID audio_write = env->GetMethodID(audio_play, "playTrack", "([BI)V");
     LOGE("获取audio_write");
     int count = 0;
+    //packet 入参
+    int got_frame;
+
     //读取frame
     while (av_read_frame(pContext, packet) >= 0) {
         if (packet->stream_index == audio_stream_ids) {

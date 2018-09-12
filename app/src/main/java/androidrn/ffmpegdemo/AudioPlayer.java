@@ -12,6 +12,7 @@ import android.media.AudioTrack;
 public class AudioPlayer {
     public native void changeSound(String input, String output);
     public native void playSound(String input, String output);
+    public native void OpenSL_EsPlay();
 
     private AudioTrack audioTrack;
 
