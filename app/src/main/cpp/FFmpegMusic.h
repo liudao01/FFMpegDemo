@@ -26,8 +26,8 @@ extern "C" {
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
 #endif //FFMPEGDEMO_FFMPEGMUSIC_H
 
-int createFFmpge();
+int createFFmpeg(int *rate,int *channel);
 
-int getPcm();
+int getPcm(void **pcm,size_t *pcm_size);
 
-void realseFFmpeg();
+void releaseFFmpeg();

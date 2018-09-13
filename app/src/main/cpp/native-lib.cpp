@@ -20,16 +20,169 @@ extern "C" {
 #include <SLES/OpenSLES_Android.h>
 }
 
+#include "FFmpegMusic.h"
+
 #define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jnilib",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
+
+SLObjectItf engineObject = NULL;//用SLObjectItf声明引擎接口对象
+SLEngineItf engineEngine = NULL;//声明具体的引擎对象实例
+//混音器
+SLObjectItf outputMixObject = NULL; //声明混音器接口对象
+SLEnvironmentalReverbItf outputMixEnvironmentalReverbItf = NULL;//环境混响接口
+SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//设置默认环境
+//播放器
+SLObjectItf bqPlayerObject;
+//播放器接口
+SLPlayItf bqPlayerPlay;
+//缓冲器队列
+SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
+
+//音量对象
+SLVolumeItf bqPlayerVolume;
+//buffer数据
+size_t bufferSize;
+void *buffer;
+
+//当喇叭播放完声音回调此函数,添加pcm数据到缓冲区
+void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
+    bufferSize = 0;
+    getPcm(&buffer, &bufferSize);//获取pcm数据
+    if (NULL != buffer && 0 != bufferSize) {
+        SLresult result;//结果
+        //播放帧
+        result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, buffer, bufferSize);
+        LOGE("bqPlayerCallback : %d", result);
+    }
+
+}
+
 //openSL ES 播放音频
 extern "C"
 JNIEXPORT void JNICALL
 Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instance) {
 
-    // TODO
+    SLresult sLresult;
+    //初始化一个引擎
+    slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    //改变成Realize状态,参数false 代表非异步,就是同步
+    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    //获取到引擎接口 利用GetInterface 调用函数
+    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    LOGE("引擎地址 &p", engineEngine);
+
+    // ====混音器 设置 开始=====
+    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
+    //同样切换状态  和上面同样的套路
+    (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
+    //设置环境混响
+    sLresult = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
+                                                &outputMixEnvironmentalReverbItf);
+
+
+    //每个函数都会返回sLresult 用于判断是否调用成功
+    if (SL_RESULT_SUCCESS == sLresult) {
+        //设置环境
+        (*outputMixEnvironmentalReverbItf)->SetEnvironmentalReverbProperties(
+                outputMixEnvironmentalReverbItf, &settings);
+    }
+    //===混音器设置结束 ====
+
+    //SLDataSource的参数  *pAudioSrc
+    /**
+     * 	void *pLocator; 缓冲区队列 SLDataLocator_BufferQueue
+	void *pFormat; 缓冲区队列装载什么数据格式 比如PCM 采样率 通道数 等
+     */
+    //pFormat 参数
+    /*
+     * SLuint32 		formatType; 源数据类型 PCM
+	SLuint32 		numChannels; 通道数
+	SLuint32 		samplesPerSec; 开始的采样率
+	SLuint32 		bitsPerSample; 采样位数
+	SLuint32 		containerSize;  包含位数
+	SLuint32 		channelMask;    声道类型  立体声 左声道 右声道 环绕声
+	SLuint32		endianness;  end结束标志位
+
+     */
+    SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1,
+                            SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
+                            SL_SPEAKER_BACK_LEFT | SL_SPEAKER_BACK_RIGHT,
+                            SL_BYTEORDER_LITTLEENDIAN};
+    //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
+    //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
+    SLDataLocator_BufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE};
+    //==CreateAudioPlayer 参数3
+    SLDataSource slDataSource = {&android_queue, &pcm};
+
+// 输出管道
+    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
+    //混音器和播放器关联起来 链接方式
+//    void *pLocator; 参数
+//    void *pFormat;
+    //和上面一样的参数
+    SLDataSink audioSnk = {&outputMix, NULL};
+    //声音增大减小 音量 调节输出
+    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
+    const SLboolean req[3] = {};
+    /**
+     * SLEngineItf self,    引擎
+		SLObjectItf * pPlayer,  播放器
+		SLDataSource *pAudioSrc,  数据源
+		SLDataSink *pAudioSnk, 混音器和播放器关联起来 链接方式
+		SLuint32 numInterfaces, 数量
+		const SLInterfaceID * pInterfaceIds, 用于声音增大减小
+		const SLboolean * pInterfaceRequired 和上面对应 如果是true 证明要被实体化  这里是3个boolean值
+     */
+    //得到播放器
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &slDataSource, &audioSnk, 3,
+                                       ids, req);
+
+    //bqPlayerObject 修改状态
+    (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
+    //    得到接口后调用  获取Player接口 bqPlayerPlay
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
+
+    //    注册回调缓冲区 //获取缓冲队列接口
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE, &bqPlayerBufferQueue);
+
+    //缓冲区接口回调  第二个参数是个函数
+    (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, NULL);
+
+    //获取音量接口
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+    //获取播放状态接口 设置播放状态
+    (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
+    //播放第一帧
+    bqPlayerCallback(bqPlayerBufferQueue, NULL);
 
 }
+
+void shutdown() {
+    // destroy buffer queue audio player object, and invalidate all associated interfaces
+    if (bqPlayerObject != NULL) {
+        (*bqPlayerObject)->Destroy(bqPlayerObject);
+        bqPlayerObject = NULL;
+        bqPlayerPlay = NULL;
+        bqPlayerBufferQueue = NULL;
+        bqPlayerVolume = NULL;
+    }
+
+    // destroy output mix object, and invalidate all associated interfaces
+    if (outputMixObject != NULL) {
+        (*outputMixObject)->Destroy(outputMixObject);
+        outputMixObject = NULL;
+        outputMixEnvironmentalReverbItf = NULL;
+    }
+    // destroy engine object, and invalidate all associated interfaces
+    if (engineObject != NULL) {
+        (*engineObject)->Destroy(engineObject);
+        engineObject = NULL;
+        engineEngine = NULL;
+    }
+    // 释放FFmpeg解码器相关资源
+    releaseFFmpeg();
+}
+
 //mp3 声音 AudioTrack 播放
 extern "C"
 JNIEXPORT void JNICALL
@@ -662,6 +815,7 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
     env->ReleaseStringUTFChars(inputStr_, inputStr);
     env->ReleaseStringUTFChars(outStr_, outStr);
 }
+
 
 
 
