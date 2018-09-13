@@ -93,13 +93,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         audioPlayer.playSound(input,output);
     }
 
+    /**
+     * 利用OpenELSE 播放音频
+     */
+    public void OpenSLPlay(){
+        audioPlayer = new AudioPlayer();
+//        String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
+//        String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
+//        Log.d(TAG, "onCreate: 文件路径 " + input);
+        audioPlayer.OpenSLEsPlay();
+    }
 
 
     public void requestPermission() {
         XXPermissions.with(this)
                 //.constantRequest() //可设置被拒绝后继续申请，直到用户授权或者永久拒绝
-                //.permission(Permission.SYSTEM_ALERT_WINDOW, Permission.REQUEST_INSTALL_PACKAGES) //支持请求6.0悬浮窗权限8.0请求安装权限
+//                .permission(Permission.SYSTEM_ALERT_WINDOW, Permission.REQUEST_INSTALL_PACKAGES) //支持请求6.0悬浮窗权限8.0请求安装权限
                 .permission(Permission.Group.STORAGE) //不指定权限则自动获取清单中的危险权限
+                .permission(Permission.RECORD_AUDIO)//声音权限
                 .request(new OnPermission() {
 
                     @Override
@@ -153,9 +164,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()){
             case R.id.bt_audio:
                 //转化音频
-                mPlayChangeAudio();
+//                mPlayChangeAudio();
                 //音频播放
 //                mPlayAudio();
+                //使用OpenSL 播放
+                OpenSLPlay();
 
                 break;
         }

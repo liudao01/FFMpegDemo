@@ -34,7 +34,7 @@ int createFFmpeg(int *rate, int *channel) {
     //获取AVFormatContext  比特率 时长 文件路径 流的信息(nustream) 都封装在这里面
     pContext = avformat_alloc_context();
 
-    char *input = "/sdcard/input.mp3";
+    const  char *input = "/sdcard/input.mp3";
     //AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options
     //上下文  文件名  打开文件格式 获取信息(AVDictionary)  凡是AVDictionary字典 都是获取视频文件信息
     if (avformat_open_input(&pContext, input, NULL, NULL) < 0) {
@@ -129,6 +129,7 @@ int createFFmpeg(int *rate, int *channel) {
 
     *rate = pCodecCtx->sample_rate;//通过解析出来的 采样率 赋值给调用的openSL ES 的采样率
     *channel = pCodecCtx->channels;//同理赋值 通道数.
+    LOGE("赋值采样率 通道数");
     return 0 ;
 
 }
@@ -139,7 +140,7 @@ int createFFmpeg(int *rate, int *channel) {
  * @param size  大小
  * @return
  */
-int getPcm(void **pcm,size_t *pcm_size) {
+void getPcm(void **pcm,size_t *pcm_size) {
     int got_frame;
     int count = 0;
     //读取frame

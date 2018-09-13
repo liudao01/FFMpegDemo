@@ -60,7 +60,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
 //openSL ES 播放音频
 extern "C"
 JNIEXPORT void JNICALL
-Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instance) {
+Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance) {
 
     SLresult sLresult;
     //初始化一个引擎
@@ -69,7 +69,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instan
     (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     //获取到引擎接口 利用GetInterface 调用函数
     (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
-    LOGE("引擎地址 &p", engineEngine);
+//    LOGE("引擎地址 &p", engineEngine);
 
     // ====混音器 设置 开始=====
     (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
@@ -88,6 +88,11 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instan
     }
     //===混音器设置结束 ====
 
+    //初始化ffmpeg
+    int rate;
+    int channers;
+    createFFmpeg(&rate, &channers);
+    LOGE("初始化ffmpeg");
     //SLDataSource的参数  *pAudioSrc
     /**
      * 	void *pLocator; 缓冲区队列 SLDataLocator_BufferQueue
@@ -110,7 +115,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instan
                             SL_BYTEORDER_LITTLEENDIAN};
     //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
     //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
-    SLDataLocator_BufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE};
+    SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE};
     //==CreateAudioPlayer 参数3
     SLDataSource slDataSource = {&android_queue, &pcm};
 
@@ -123,7 +128,8 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instan
     SLDataSink audioSnk = {&outputMix, NULL};
     //声音增大减小 音量 调节输出
     const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
-    const SLboolean req[3] = {};
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+            /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_TRUE};
     /**
      * SLEngineItf self,    引擎
 		SLObjectItf * pPlayer,  播放器
@@ -134,24 +140,30 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSL_1EsPlay(JNIEnv *env, jobject instan
 		const SLboolean * pInterfaceRequired 和上面对应 如果是true 证明要被实体化  这里是3个boolean值
      */
     //得到播放器
-    (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &slDataSource, &audioSnk, 3,
-                                       ids, req);
-
+    sLresult = (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &slDataSource,
+                                                  &audioSnk, 3,
+                                                  ids, req);
+    LOGE("  播放器 sLresult  %d ", sLresult);
     //bqPlayerObject 修改状态
-    (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
+    sLresult = (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
+    LOGE("  播放器 修改状态 sLresult  %d ", sLresult);
     //    得到接口后调用  获取Player接口 bqPlayerPlay
-    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
-
+    sLresult = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
+    LOGE("    得到接口后调用  获取Player接口 bqPlayerPlay sLresult  %d ", sLresult);
     //    注册回调缓冲区 //获取缓冲队列接口
-    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE, &bqPlayerBufferQueue);
-
+    sLresult = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
+                                               &bqPlayerBufferQueue);
+    LOGE("  注册回调缓冲区 //获取缓冲队列接口 sLresult  %d ", sLresult);
     //缓冲区接口回调  第二个参数是个函数
-    (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, NULL);
-
+    sLresult = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback,
+                                                        NULL);
+    LOGE("  缓冲区接口回调  sLresult  %d ", sLresult);
     //获取音量接口
-    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+    sLresult = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+    LOGE("  获取音量接口 sLresult  %d ", sLresult);
     //获取播放状态接口 设置播放状态
-    (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
+    sLresult = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
+    LOGE("  获取播放状态接口 sLresult  %d ", sLresult);
     //播放第一帧
     bqPlayerCallback(bqPlayerBufferQueue, NULL);
 
@@ -815,7 +827,6 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
     env->ReleaseStringUTFChars(inputStr_, inputStr);
     env->ReleaseStringUTFChars(outStr_, outStr);
 }
-
 
 
 

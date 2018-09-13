@@ -28,6 +28,6 @@ extern "C" {
 
 int createFFmpeg(int *rate,int *channel);
 
-int getPcm(void **pcm,size_t *pcm_size);
+void getPcm(void **pcm,size_t *pcm_size);
 
 void releaseFFmpeg();
