@@ -1,39 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/colorAccent"
-    android:layout_height="match_parent">
+    android:orientation="vertical">
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/colorAccent"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/sp_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="mPlay"
+            android:text="开始播放视频" />
+
+        <Button
+            android:id="@+id/bt_audio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="开始音频" />
+
+        <Button
+            android:id="@+id/bt_audio_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="openEL停止" />
+    </LinearLayout>
 
     <androidrn.ffmpegdemo.MyVideoView
         android:id="@+id/surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
-        android:background="@color/colorAccent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Spinner
-
-            android:id="@+id/sp_video"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="mPlay"
-            android:text="开始播放视频" />
-        <Button
-            android:id="@+id/bt_audio"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="开始音频" />
-
-    </LinearLayout>
-</RelativeLayout>
+</LinearLayout>
