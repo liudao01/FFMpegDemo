@@ -51,10 +51,9 @@ void bqPlayerCallBack(SLAndroidSimpleBufferQueueItf bq, void *context) {
         //播放帧
         result = (*bqPalyerQueue)->Enqueue(bqPalyerQueue, buffer, bufferSize);
         LOGE("回调 bqPlayerCallback : %d", result);
-    }else{
+    } else {
         LOGE("获取PCM失败")
     }
-
 }
 
 //openSL ES 播放音频
@@ -92,7 +91,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
                 outputMixEnvironmentalReverbItf, &settings);
     } else {
         LOGE("环境混响设置不成功 %d", sLresult);
-        return;
+//        return;
     }
     //===混音器设置结束 ====
 
@@ -101,6 +100,13 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     int channers;
     createFFmpeg(&rate, &channers);
     LOGE("初始化ffmpeg");
+
+
+    //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
+    //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
+    SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+                                                      2};
+
     //SLDataSource的参数  *pAudioSrc
     /**
      * 	void *pLocator; 缓冲区队列 SLDataLocator_BufferQueue
@@ -117,15 +123,11 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
 	SLuint32		endianness;  end结束标志位
 
      */
-    SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1,
+    SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM, channers, SL_SAMPLINGRATE_44_1,
                             SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
-                            SL_SPEAKER_BACK_LEFT | SL_SPEAKER_BACK_RIGHT,
+                            SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
                             SL_BYTEORDER_LITTLEENDIAN};
-    //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
-    //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
-    SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
-                                                      2};
-//    SLDataLocator_AndroidBufferQueue
+    //    SLDataLocator_AndroidBufferQueue
 //    SLDataLocator_AndroidSimpleBufferQueue
     //==CreateAudioPlayer 参数3
     SLDataSource slDataSource = {&android_queue, &pcm};
@@ -139,8 +141,8 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     SLDataSink audioSnk = {&outputMix, NULL};
     //声音增大减小 音量 调节输出
     const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
-    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
-            /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_TRUE};
+    const SLboolean req[3]={SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
+    LOGE("引擎  %p",engineEngine);
     /**
      * SLEngineItf self,    引擎
 		SLObjectItf * pPlayer,  播放器
@@ -167,7 +169,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     LOGE("  注册回调缓冲区 //获取缓冲队列接口 sLresult  %d ", sLresult);
     //缓冲区接口回调  第二个参数是个函数
     sLresult = (*bqPalyerQueue)->RegisterCallback(bqPalyerQueue, bqPlayerCallBack,
-                                                        NULL);
+                                                  NULL);
     LOGE("  缓冲区接口回调  sLresult  %d ", sLresult);
     //获取音量接口
     sLresult = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
@@ -180,7 +182,11 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
 
 }
 
-void shutdown() {
+//openSL ES 停止音频
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_AudioPlayer_OpenSlESStop(JNIEnv *env, jobject instance) {
+
     // destroy buffer queue audio player object, and invalidate all associated interfaces
     if (bqPlayerObject != NULL) {
         (*bqPlayerObject)->Destroy(bqPlayerObject);
@@ -204,8 +210,8 @@ void shutdown() {
     }
     // 释放FFmpeg解码器相关资源
     releaseFFmpeg();
-}
 
+}
 //mp3 声音 AudioTrack 播放
 extern "C"
 JNIEXPORT void JNICALL

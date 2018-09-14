@@ -10,9 +10,23 @@ import android.media.AudioTrack;
  * @time 2018/9/5 17:14
  */
 public class AudioPlayer {
-//    public native void changeSound(String input, String output);
-//    public native void playSound(String input, String output);
+
+    static {
+        System.loadLibrary("native-lib");
+        System.loadLibrary("avcodec-56");
+        System.loadLibrary("avfilter-5");
+        System.loadLibrary("avformat-56");
+        System.loadLibrary("avutil-54");
+        System.loadLibrary("swresample-1");
+        System.loadLibrary("swscale-3");
+        System.loadLibrary("native-lib");
+
+    }
+    public native void changeSound(String input, String output);
+    public native void playSound(String input, String output);
+
     public native void OpenSLEsPlay();
+    public native void OpenSlESStop();
 
     private AudioTrack audioTrack;
 

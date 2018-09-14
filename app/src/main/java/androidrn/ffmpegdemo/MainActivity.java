@@ -25,6 +25,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     AudioPlayer audioPlayer;
     private Spinner sp_video;
     private Button btAudio;
+    private Button btAudioStop;
+
+
 
 
     @Override
@@ -47,8 +50,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.d(TAG, "onCreate: sp_video " + sp_video);
         Log.d(TAG, "onCreate: adapter " + adapter);
         sp_video.setAdapter(adapter);
-
+        btAudioStop = findViewById(R.id.bt_audio_stop);
         btAudio.setOnClickListener(this);
+        btAudioStop.setOnClickListener(this);
     }
 
     /**
@@ -113,6 +117,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         audioPlayer.OpenSLEsPlay();
     }
 
+    /**
+     * 利用OpenELSE 停止音频
+     */
+    public void OpenSLStop() {
+        audioPlayer.OpenSlESStop();
+    }
+
 
     public void requestPermission() {
         XXPermissions.with(this)
@@ -156,17 +167,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //    public native String stringFromJNI();
 //    public native void openVideo(String inputStr, String outStr);
 
-    static {
-        System.loadLibrary("native-lib");
-        System.loadLibrary("avcodec-56");
-        System.loadLibrary("avfilter-5");
-        System.loadLibrary("avformat-56");
-        System.loadLibrary("avutil-54");
-        System.loadLibrary("swresample-1");
-        System.loadLibrary("swscale-3");
-        System.loadLibrary("native-lib");
-
-    }
 
     @Override
     public void onClick(View v) {
@@ -179,6 +179,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //使用OpenSL 播放
                 OpenSLPlay();
 
+                break;
+            case R.id.bt_audio_stop:
+                OpenSLStop();
                 break;
         }
     }
