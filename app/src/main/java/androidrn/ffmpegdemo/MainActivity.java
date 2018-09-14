@@ -110,9 +110,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     public void OpenSLPlay() {
         audioPlayer = new AudioPlayer();
-//        String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
-//        String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
-//        Log.d(TAG, "onCreate: 文件路径 " + input);
         audioPlayer.OpenSLEsPlay();
     }
 
