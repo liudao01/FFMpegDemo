@@ -29,8 +29,8 @@ SLObjectItf engineObject = NULL;//用SLObjectItf声明引擎接口对象
 SLEngineItf engineEngine = NULL;//声明具体的引擎对象实例
 //混音器
 SLObjectItf outputMixObject = NULL; //声明混音器接口对象
-SLEnvironmentalReverbItf outputMixEnvironmentalReverbItf = NULL;//环境混响接口
-SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//设置默认环境
+SLEnvironmentalReverbItf    outputMixEnvironmentalReverb = NULL;//环境混响接口
+const SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//设置默认环境
 //播放器
 SLObjectItf bqPlayerObject;
 //播放器接口
@@ -64,27 +64,35 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
 
     SLresult sLresult;
     //初始化一个引擎
-    slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    sLresult = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    LOGE("初始化引擎 %d", sLresult);
     //改变成Realize状态,参数false 代表非异步,就是同步
-    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    sLresult = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    LOGE("引擎改变成Realize状态 %d", sLresult);
     //获取到引擎接口 利用GetInterface 调用函数
-    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    sLresult = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    LOGE("获取到引擎接口 引擎地址%p     sLresult  %d ",engineEngine, sLresult);
+    LOGE("获取到引擎接口 %d", sLresult);
 //    LOGE("引擎地址 &p", engineEngine);
 
     // ====混音器 设置 开始=====
-    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
+    sLresult = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
+    LOGE("混音器 设置 %d", sLresult);
     //同样切换状态  和上面同样的套路
-    (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
+    sLresult = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
+    LOGE("混音器 同样切换状态 %d", sLresult);
     //设置环境混响
     sLresult = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
-                                                &outputMixEnvironmentalReverbItf);
-
-
+                                                &outputMixEnvironmentalReverb);
+    LOGE("设置环境混响 %d", sLresult);
     //每个函数都会返回sLresult 用于判断是否调用成功
     if (SL_RESULT_SUCCESS == sLresult) {
+        LOGE("混音器设置成功");
         //设置环境
-        (*outputMixEnvironmentalReverbItf)->SetEnvironmentalReverbProperties(
-                outputMixEnvironmentalReverbItf, &settings);
+        (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
+                outputMixEnvironmentalReverb, &settings);
+    } else {
+        LOGE("混音器设置不成功 %d", sLresult);
     }
     //===混音器设置结束 ====
 
@@ -115,7 +123,9 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
                             SL_BYTEORDER_LITTLEENDIAN};
     //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
     //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
-    SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE};
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+                                                            2};
+//    SLDataLocator_AndroidSimpleBufferQueue
     //==CreateAudioPlayer 参数3
     SLDataSource slDataSource = {&android_queue, &pcm};
 
@@ -183,7 +193,7 @@ void shutdown() {
     if (outputMixObject != NULL) {
         (*outputMixObject)->Destroy(outputMixObject);
         outputMixObject = NULL;
-        outputMixEnvironmentalReverbItf = NULL;
+        outputMixEnvironmentalReverb = NULL;
     }
     // destroy engine object, and invalidate all associated interfaces
     if (engineObject != NULL) {

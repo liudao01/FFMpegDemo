@@ -19,6 +19,7 @@ int out_sample_rate;
 int out_channer_nb = -1;
 //找到视频流
 int audio_stream_ids = -1;
+
 /**
  * 初始化.   openSL ES 调用这个函数
  * @param rate 采样率
@@ -34,18 +35,19 @@ int createFFmpeg(int *rate, int *channel) {
     //获取AVFormatContext  比特率 时长 文件路径 流的信息(nustream) 都封装在这里面
     pContext = avformat_alloc_context();
 
-    const  char *input = "/sdcard/input.mp3";
+    const char *input = "/sdcard/input.mp3";
     //AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options
     //上下文  文件名  打开文件格式 获取信息(AVDictionary)  凡是AVDictionary字典 都是获取视频文件信息
-    if (avformat_open_input(&pContext, input, NULL, NULL) < 0) {
-        LOGE("打开失败");
-        return -1;
+    if (avformat_open_input(&pContext, input, NULL, NULL) != 0) {
+        LOGE("%s", "打开输入视频文件失败");
+    }else{
+
+        LOGE("%s", "打开输入视频成功");
     }
 
     //给nbstram填充信息
     if (avformat_find_stream_info(pContext, NULL) < 0) {
-        LOGE("获取信息失败");
-        return -1;
+        LOGE("%s", "获取信息失败");
     }
 
 
@@ -130,7 +132,7 @@ int createFFmpeg(int *rate, int *channel) {
     *rate = pCodecCtx->sample_rate;//通过解析出来的 采样率 赋值给调用的openSL ES 的采样率
     *channel = pCodecCtx->channels;//同理赋值 通道数.
     LOGE("赋值采样率 通道数");
-    return 0 ;
+    return 0;
 
 }
 
@@ -140,7 +142,7 @@ int createFFmpeg(int *rate, int *channel) {
  * @param size  大小
  * @return
  */
-void getPcm(void **pcm,size_t *pcm_size) {
+void getPcm(void **pcm, size_t *pcm_size) {
     int got_frame;
     int count = 0;
     //读取frame

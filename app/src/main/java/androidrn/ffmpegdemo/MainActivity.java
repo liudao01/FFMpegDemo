@@ -27,7 +27,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btAudio;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,17 +51,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btAudio.setOnClickListener(this);
     }
 
+    /**
+     *     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+     */
     public void isHasPermission() {
-        if (XXPermissions.isHasPermission(MainActivity.this, Permission.Group.STORAGE)) {
+        if (XXPermissions.isHasPermission(MainActivity.this,  Permission.READ_EXTERNAL_STORAGE,Permission.READ_EXTERNAL_STORAGE,
+                Permission.WRITE_EXTERNAL_STORAGE,Permission.RECORD_AUDIO)) {
             Toast.makeText(MainActivity.this, "已经获取到权限，不需要再次申请了", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(MainActivity.this, "还没有获取到权限或者部分权限未授予", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "还没有获取权限", Toast.LENGTH_SHORT).show();
             requestPermission();
         }
+//        if (XXPermissions.isHasPermission(this, Permission.RECORD_AUDIO)) {
+//            Toast.makeText(MainActivity.this, "已经获取到音频", Toast.LENGTH_SHORT).show();
+//        }else{
+//            Toast.makeText(MainActivity.this, "已经获取到存储权限，不需要再次申请了", Toast.LENGTH_SHORT).show();
+//        }
     }
 
     /**
      * 播放视频
+     *
      * @param view
      */
     public void mPlay(View view) {
@@ -80,8 +91,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
         String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
-        audioPlayer.changeSound(input,output);
+        audioPlayer.changeSound(input, output);
     }
+
     /**
      * 播放音频
      */
@@ -90,13 +102,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
         String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
-        audioPlayer.playSound(input,output);
+        audioPlayer.playSound(input, output);
     }
 
     /**
      * 利用OpenELSE 播放音频
      */
-    public void OpenSLPlay(){
+    public void OpenSLPlay() {
         audioPlayer = new AudioPlayer();
 //        String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
 //        String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
@@ -109,8 +121,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         XXPermissions.with(this)
                 //.constantRequest() //可设置被拒绝后继续申请，直到用户授权或者永久拒绝
 //                .permission(Permission.SYSTEM_ALERT_WINDOW, Permission.REQUEST_INSTALL_PACKAGES) //支持请求6.0悬浮窗权限8.0请求安装权限
-                .permission(Permission.Group.STORAGE) //不指定权限则自动获取清单中的危险权限
-                .permission(Permission.RECORD_AUDIO)//声音权限
+                .permission(Permission.READ_EXTERNAL_STORAGE,
+                        Permission.WRITE_EXTERNAL_STORAGE,Permission.RECORD_AUDIO) //不指定权限则自动获取清单中的危险权限
                 .request(new OnPermission() {
 
                     @Override
@@ -161,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.bt_audio:
                 //转化音频
 //                mPlayChangeAudio();
