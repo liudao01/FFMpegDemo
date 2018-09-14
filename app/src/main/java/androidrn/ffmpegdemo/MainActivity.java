@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
         String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
-        audioPlayer.changeSound(input, output);
+//        audioPlayer.changeSound(input, output);
     }
 
     /**
@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String input = new File(Environment.getExternalStorageDirectory(), "input.mp3").getAbsolutePath();
         String output = new File(Environment.getExternalStorageDirectory(), "output.pcm").getAbsolutePath();
         Log.d(TAG, "onCreate: 文件路径 " + input);
-        audioPlayer.playSound(input, output);
+//        audioPlayer.playSound(input, output);
     }
 
     /**
@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * which is packaged with this application.
      */
 //    public native String stringFromJNI();
-    public native void openVideo(String inputStr, String outStr);
+//    public native void openVideo(String inputStr, String outStr);
 
     static {
         System.loadLibrary("native-lib");

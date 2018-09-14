@@ -13,7 +13,7 @@ extern "C" {
 //用于android 绘制图像的
 #include <android/native_window_jni.h>
 #include <unistd.h>
-#include <libswresample/swresample.h>
+#include "libswresample/swresample.h"
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 }
@@ -28,29 +28,31 @@ SLEngineItf engineEngine = NULL;//声明具体的引擎对象实例
 //混音器
 SLObjectItf outputMixObject = NULL; //声明混音器接口对象
 SLEnvironmentalReverbItf outputMixEnvironmentalReverbItf = NULL;//环境混响接口
-const SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//设置默认环境
+SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//设置默认环境
 //播放器
 SLObjectItf bqPlayerObject;
 //播放器接口
 SLPlayItf bqPlayerPlay;
 //缓冲器队列
-SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
+SLAndroidSimpleBufferQueueItf bqPalyerQueue;
 
 //音量对象
 SLVolumeItf bqPlayerVolume;
 //buffer数据
-size_t bufferSize;
+size_t bufferSize = 0;
 void *buffer;
 
 //当喇叭播放完声音回调此函数,添加pcm数据到缓冲区
-void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
+void bqPlayerCallBack(SLAndroidSimpleBufferQueueItf bq, void *context) {
     bufferSize = 0;
     getPcm(&buffer, &bufferSize);//获取pcm数据
     if (NULL != buffer && 0 != bufferSize) {
         SLresult result;//结果
         //播放帧
-        result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, buffer, bufferSize);
-        LOGE("bqPlayerCallback : %d", result);
+        result = (*bqPalyerQueue)->Enqueue(bqPalyerQueue, buffer, bufferSize);
+        LOGE("回调 bqPlayerCallback : %d", result);
+    }else{
+        LOGE("获取PCM失败")
     }
 
 }
@@ -84,12 +86,12 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     LOGE("设置环境混响 %d", sLresult);
     //每个函数都会返回sLresult 用于判断是否调用成功
     if (SL_RESULT_SUCCESS == sLresult) {
-        LOGE("混音器设置成功");
+        LOGE("环境混响成功");
         //设置环境
         (*outputMixEnvironmentalReverbItf)->SetEnvironmentalReverbProperties(
                 outputMixEnvironmentalReverbItf, &settings);
     } else {
-        LOGE("混音器设置不成功 %d", sLresult);
+        LOGE("环境混响设置不成功 %d", sLresult);
         return;
     }
     //===混音器设置结束 ====
@@ -122,7 +124,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     //命名规则 都是SL 开头 比如像这个 把前面SLDataLocator 打出来了即可
     //pLocator -> SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE 这个是读取本地的 如果是网络的 则是 SL_DATALOCATOR_IODEVICE
     SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
-                                                            2};
+                                                      2};
 //    SLDataLocator_AndroidBufferQueue
 //    SLDataLocator_AndroidSimpleBufferQueue
     //==CreateAudioPlayer 参数3
@@ -161,10 +163,10 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     LOGE("    得到接口后调用  获取Player接口 bqPlayerPlay sLresult  %d ", sLresult);
     //    注册回调缓冲区 //获取缓冲队列接口
     sLresult = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
-                                               &bqPlayerBufferQueue);
+                                               &bqPalyerQueue);
     LOGE("  注册回调缓冲区 //获取缓冲队列接口 sLresult  %d ", sLresult);
     //缓冲区接口回调  第二个参数是个函数
-    sLresult = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback,
+    sLresult = (*bqPalyerQueue)->RegisterCallback(bqPalyerQueue, bqPlayerCallBack,
                                                         NULL);
     LOGE("  缓冲区接口回调  sLresult  %d ", sLresult);
     //获取音量接口
@@ -174,7 +176,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     sLresult = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
     LOGE("  获取播放状态接口 sLresult  %d ", sLresult);
     //播放第一帧
-    bqPlayerCallback(bqPlayerBufferQueue, NULL);
+    bqPlayerCallBack(bqPalyerQueue, NULL);
 
 }
 
@@ -184,7 +186,7 @@ void shutdown() {
         (*bqPlayerObject)->Destroy(bqPlayerObject);
         bqPlayerObject = NULL;
         bqPlayerPlay = NULL;
-        bqPlayerBufferQueue = NULL;
+        bqPalyerQueue = NULL;
         bqPlayerVolume = NULL;
     }
 
