@@ -19,6 +19,7 @@ extern "C" {
 }
 
 #include "FFmpegMusic.h"
+#include "FFmpegPlay.h"
 
 #define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jnilib",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
@@ -846,4 +847,27 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
 }
 
 
+/**
+ * 音视频同步播放
+ */
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_AudioPlayer_play(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = env->GetStringUTFChars(url_, 0);
 
+    play(const_cast<char *>(url));
+    // TODO
+
+    env->ReleaseStringUTFChars(url_, url);
+}
+
+/**
+ * 音视频同步停止
+ */
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_AudioPlayer_stop(JNIEnv *env, jobject instance) {
+
+    // TODO
+
+}

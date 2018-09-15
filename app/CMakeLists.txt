@@ -3,6 +3,9 @@ add_library( native-lib
              SHARED
              src/main/cpp/native-lib.cpp
              src/main/cpp/FFmpegMusic.cpp
+             src/main/cpp/FFmpegVideo.cpp
+             src/main/cpp/FFmpegPlay.cpp
+             src/main/cpp/FFmpegAudio.cpp
               )
 
 find_library( log-lib

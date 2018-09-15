@@ -28,6 +28,9 @@ public class AudioPlayer {
     public native void OpenSLEsPlay();
     public native void OpenSlESStop();
 
+    public native void play(String url);
+    public native void stop();
+
     private AudioTrack audioTrack;
 
     /**

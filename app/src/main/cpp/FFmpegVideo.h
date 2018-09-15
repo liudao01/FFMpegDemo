@@ -1,0 +1,8 @@
+//
+// Created by liuml on 2018/9/15.
+//
+
+#ifndef FFMPEGDEMO_FFMPEGVIDEO_H
+#define FFMPEGDEMO_FFMPEGVIDEO_H
+
+#endif //FFMPEGDEMO_FFMPEGVIDEO_H

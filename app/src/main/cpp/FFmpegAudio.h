@@ -1,0 +1,8 @@
+//
+// Created by liuml on 2018/9/15.
+//
+
+#ifndef FFMPEGDEMO_FFMPEGAUDIO_H
+#define FFMPEGDEMO_FFMPEGAUDIO_H
+
+#endif //FFMPEGDEMO_FFMPEGAUDIO_H
