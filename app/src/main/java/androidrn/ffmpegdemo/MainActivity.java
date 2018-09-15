@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -26,8 +27,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Spinner sp_video;
     private Button btAudio;
     private Button btAudioStop;
+    private LinearLayout llSynchronizationPlay;
+    private Button btPlay;
+    private Button btStop;
 
-
+    private Button btChange;
+    private LinearLayout llOther;
 
 
     @Override
@@ -53,16 +58,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btAudioStop = findViewById(R.id.bt_audio_stop);
         btAudio.setOnClickListener(this);
         btAudioStop.setOnClickListener(this);
+        llOther = findViewById(R.id.ll_other);
+        //同步播放
+        btChange = findViewById(R.id.bt_change);
+        btChange.setOnClickListener(this);
+        llSynchronizationPlay = findViewById(R.id.ll_synchronization_play);
+        btPlay = findViewById(R.id.bt_play);
+        btStop = findViewById(R.id.bt_stop);
+
     }
 
     /**
-     *     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+     * <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+     * <uses-permission android:name="android.permission.RECORD_AUDIO" />
+     * <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
      */
     public void isHasPermission() {
-        if (XXPermissions.isHasPermission(MainActivity.this,  Permission.READ_EXTERNAL_STORAGE,Permission.READ_EXTERNAL_STORAGE,
-                Permission.WRITE_EXTERNAL_STORAGE,Permission.RECORD_AUDIO)) {
+        if (XXPermissions.isHasPermission(MainActivity.this, Permission.READ_EXTERNAL_STORAGE, Permission.READ_EXTERNAL_STORAGE,
+                Permission.WRITE_EXTERNAL_STORAGE, Permission.RECORD_AUDIO)) {
             Toast.makeText(MainActivity.this, "已经获取到权限，不需要再次申请了", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(MainActivity.this, "还没有获取权限", Toast.LENGTH_SHORT).show();
@@ -130,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //.constantRequest() //可设置被拒绝后继续申请，直到用户授权或者永久拒绝
 //                .permission(Permission.SYSTEM_ALERT_WINDOW, Permission.REQUEST_INSTALL_PACKAGES) //支持请求6.0悬浮窗权限8.0请求安装权限
                 .permission(Permission.READ_EXTERNAL_STORAGE,
-                        Permission.WRITE_EXTERNAL_STORAGE,Permission.RECORD_AUDIO) //不指定权限则自动获取清单中的危险权限
+                        Permission.WRITE_EXTERNAL_STORAGE, Permission.RECORD_AUDIO) //不指定权限则自动获取清单中的危险权限
                 .request(new OnPermission() {
 
                     @Override
@@ -166,8 +179,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
 //    public native String stringFromJNI();
 //    public native void openVideo(String inputStr, String outStr);
-
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -182,6 +193,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.bt_audio_stop:
                 OpenSLStop();
+                break;
+            case R.id.bt_change:
+                if (llSynchronizationPlay.getVisibility() == View.VISIBLE) {
+                    llOther.setVisibility(View.VISIBLE);
+                    llSynchronizationPlay.setVisibility(View.GONE);
+                } else {
+                    llOther.setVisibility(View.GONE);
+                    llSynchronizationPlay.setVisibility(View.VISIBLE);
+                }
                 break;
         }
     }

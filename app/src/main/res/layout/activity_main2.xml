@@ -6,8 +6,13 @@
     android:layout_height="match_parent"
     android:background="@color/colorAccent"
     android:orientation="vertical">
-
+    <Button
+        android:id="@+id/bt_change"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="切换播放方式" />
     <LinearLayout
+        android:id="@+id/ll_other"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/colorAccent"
@@ -39,11 +44,42 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="openEL停止" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:visibility="gone"
+        android:id="@+id/ll_synchronization_play"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="http://ivi.bupt.edu.cn/hls/cctv1hd.m3u8" />
+
+        <Button
+            android:id="@+id/bt_play"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="播放" />
+
+        <Button
+            android:id="@+id/bt_stop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="停止" />
+
+
+
     </LinearLayout>
 
     <androidrn.ffmpegdemo.MyVideoView
+        android:layout_weight="1"
         android:id="@+id/surface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
