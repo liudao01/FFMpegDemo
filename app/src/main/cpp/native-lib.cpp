@@ -75,7 +75,10 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
 //    LOGE("引擎地址 &p", engineEngine);
 
     // ====混音器 设置 开始=====
-    sLresult = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
+    const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
+    const SLboolean mreq[1] = {SL_BOOLEAN_FALSE};
+    sLresult =(*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);
+//    sLresult = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
     LOGE("混音器 设置 %d", sLresult);
     //同样切换状态  和上面同样的套路
     sLresult = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
@@ -83,6 +86,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     //设置环境混响
     sLresult = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
                                                 &outputMixEnvironmentalReverbItf);
+
     LOGE("设置环境混响 %d", sLresult);
     //每个函数都会返回sLresult 用于判断是否调用成功
     if (SL_RESULT_SUCCESS == sLresult) {

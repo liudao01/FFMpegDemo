@@ -7,6 +7,7 @@
 #include <string>
 #include <android/log.h>
 #include "FFmpegMusic.h"
+#include "Log.h"
 
 AVFormatContext *pContext;
 AVCodecContext *pCodecCtx;

@@ -3,12 +3,106 @@
 //
 
 #include "FFmpegPlay.h"`
+#include "FFmpegAudio.h"
+#include "FFmpegVideo.h"
+#include "FFmpegMusic.h"
+#include "Log.h"
+
+const char *path;
+FFmpegVideo *video;
+FFmpegAudio *audio;
+
+pthread_t p_tid;//解码线程
+
+int isPlay = 0; //播放状态
+//解码函数
+void *process(void *args) {
+    //解码
+    LOGE("开启解码线程");
+    //1.注册组件
+    av_register_all();
+    avformat_network_init();
+    //封装格式上下文
+    AVFormatContext *pFormatCtx = avformat_alloc_context();
+
+    //2.打开输入视频文件
+    if (avformat_open_input(&pFormatCtx, path, NULL, NULL) != 0) {
+        LOGE("%s", "打开输入视频文件失败");
+    }
+    //3.获取视频信息
+    if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
+        LOGE("%s", "获取视频信息失败");
+    }
+
+    //视频解码，需要找到视频和音频对应的AVStream所在pFormatCtx->streams的索引位置
+    int i = 0;
+    for (; i < pFormatCtx->nb_streams; i++) {
+        //4.获取视频解码器
+        AVCodecContext *pCodeCtx = pFormatCtx->streams[i]->codec;
+        AVCodec *pCodec = avcodec_find_decoder(pCodeCtx->codec_id);
+        if (avcodec_open2(pCodeCtx, pCodec, NULL) < 0) {
+            LOGE("%s", "解码器无法打开");
+        }
+        //根据类型判断，是否是视频流
+        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+            /*找到视频流*/
+            video->setAvCodecContext(pCodeCtx);
+            video->index = i;
+
+        } else if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+            //找到音频流
+            audio->setAvCodecContext(pCodeCtx);
+            audio->index = i;
+        }
+    }
+
+    //开启音频 视频  循环播放
+
+    video->play();
+    audio->play();
+    isPlay = 1;
+    //解码Packet
+    AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+    //子线程 解码
+    while (isPlay && av_read_frame(pFormatCtx, packet) == 0) {
+        //判断packet 的流索引 和视频流索引相等 那么添加到视频队列中
+        if (video && video->isPlay && packet->stream_index == video->index) {
+            video->put(packet);
+        } else if (audio && audio->isPlay && packet->stream_index == audio->index) {
+            //如果是音频流 同样添加到音频队列中
+            audio->put(packet);
+        }
+        //销毁packet产生的内存
+        av_packet_unref(packet);
+    }
 
 
-void play(char *url){
+    //视频解码完成 可能视频播放完 也可能视频没播放玩
+    isPlay = 0;
+    //释放
+    av_free_packet(packet);
+    avformat_free_context(pFormatCtx);
+
+
+    if (video && video->isPlay) {
+        video->stop();
+    }
+    if (audio && audio->isPlay) {
+        audio->stop();
+    }
+}
+
+void play(char *url) {
+    //实例化对象
+    video = new FFmpegVideo();
+    audio = new FFmpegAudio();
+
+    //开启解码线程
+    pthread_create(&p_tid, NULL, process, NULL);
+
 
 }
 
-void stop(){
+void stop() {
 
 }
