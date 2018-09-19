@@ -16,7 +16,8 @@ public class MyVideoView extends SurfaceView {
 
 
     // Used to load the 'native-lib' library on application startup.
-
+    public native void play(String url);
+    public native void stop();
 
 
     public MyVideoView(Context context) {

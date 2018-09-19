@@ -2,14 +2,20 @@
 // Created by liuml on 2018/9/15.
 //
 
-#include <libavcodec/avcodec.h>
-#include <sys/types.h>
-#include <queue>
-
 #ifndef FFMPEGDEMO_FFMPEGVIDEO_H
 #define FFMPEGDEMO_FFMPEGVIDEO_H
 
 #endif //FFMPEGDEMO_FFMPEGVIDEO_H
+extern "C"
+{
+#include <pthread.h>
+#include <libswresample/swresample.h>
+#include <libswscale/swscale.h>
+
+#include <libavcodec/avcodec.h>
+#include <sys/types.h>
+#include <queue>
+#include "Log.h"
 
 class FFmpegVideo {
 public:
@@ -45,4 +51,10 @@ public:
 
     //解码器上下文
     AVCodecContext *codec;
+
+    //加锁
+    pthread_mutex_t mutex;
+    //条件变量
+    pthread_cond_t cond;
+};
 };

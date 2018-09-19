@@ -856,7 +856,7 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
  */
 extern "C"
 JNIEXPORT void JNICALL
-Java_androidrn_ffmpegdemo_AudioPlayer_play(JNIEnv *env, jobject instance, jstring url_) {
+Java_androidrn_ffmpegdemo_MyVideoView_play(JNIEnv *env, jobject instance, jstring url_) {
     const char *url = env->GetStringUTFChars(url_, 0);
 
     play(const_cast<char *>(url));
@@ -870,7 +870,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_play(JNIEnv *env, jobject instance, jstrin
  */
 extern "C"
 JNIEXPORT void JNICALL
-Java_androidrn_ffmpegdemo_AudioPlayer_stop(JNIEnv *env, jobject instance) {
+Java_androidrn_ffmpegdemo_MyVideoView_stop(JNIEnv *env, jobject instance) {
 
     // TODO
 

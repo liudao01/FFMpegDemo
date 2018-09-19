@@ -2,11 +2,7 @@
 // Created by liuml on 2018/9/15.
 //
 
-#include "FFmpegPlay.h"`
-#include "FFmpegAudio.h"
-#include "FFmpegVideo.h"
-#include "FFmpegMusic.h"
-#include "Log.h"
+#include "FFmpegPlay.h"
 
 const char *path;
 FFmpegVideo *video;
@@ -21,7 +17,7 @@ void *process(void *args) {
     LOGE("开启解码线程");
     //1.注册组件
     av_register_all();
-    avformat_network_init();
+    avformat_network_init();//和本地的不同
     //封装格式上下文
     AVFormatContext *pFormatCtx = avformat_alloc_context();
 

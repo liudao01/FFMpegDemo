@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -19,6 +20,17 @@ import java.io.File;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    static {
+        System.loadLibrary("native-lib");
+        System.loadLibrary("avcodec-56");
+        System.loadLibrary("avfilter-5");
+        System.loadLibrary("avformat-56");
+        System.loadLibrary("avutil-54");
+        System.loadLibrary("swresample-1");
+        System.loadLibrary("swscale-3");
+        System.loadLibrary("native-lib");
+
+    }
 
     private static final String TAG = "Mainactivity";
     // Used to load the 'native-lib' library on application startup.
@@ -33,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Button btChange;
     private LinearLayout llOther;
-
+    private EditText editUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +76,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btChange.setOnClickListener(this);
         llSynchronizationPlay = findViewById(R.id.ll_synchronization_play);
         btPlay = findViewById(R.id.bt_play);
+        btPlay.setOnClickListener(this);
         btStop = findViewById(R.id.bt_stop);
+        btStop.setOnClickListener(this);
+
+
+        editUrl = findViewById(R.id.edit_url);
+        editUrl.setText("rtmp://live.hkstv.hk.lxdns.com/live/hks");
 
     }
 
@@ -202,6 +220,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     llOther.setVisibility(View.GONE);
                     llSynchronizationPlay.setVisibility(View.VISIBLE);
                 }
+                break;
+            case R.id.bt_play://音视频同步播放
+
+                String text = editUrl.getText().toString();
+                MyVideoView myVideoView = new MyVideoView(this);
+                myVideoView.play(text);
+                break;
+            case R.id.bt_stop://音视频同步停止
                 break;
         }
     }

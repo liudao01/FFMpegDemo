@@ -12,6 +12,7 @@
 #include <android/log.h>
 //extern "C" 主要作用就是为了能够正确实现C++代码调用其他C语言代码 加上extern "C"后，会指示编译器这部分代码按C语言的进行编译，而不是C++的。
 extern "C" {
+
 //编码
 #include "libavcodec/avcodec.h"
 //封装格式处理
@@ -23,7 +24,9 @@ extern "C" {
 #include <unistd.h>
 #include <libswresample/swresample.h>
 #include <queue>
-}
+#include "Log.h"
+};
+
 #endif //FFMPEGDEMO_FFMPEGAUDIO_H
 
 class FFmpegAudio {
@@ -60,4 +63,10 @@ public:
 
     //解码器上下文
     AVCodecContext *codec;
+
+    //加锁
+    pthread_mutex_t mutex;
+    //条件变量
+    pthread_cond_t cond;
+
 };
