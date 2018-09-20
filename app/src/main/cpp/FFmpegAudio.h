@@ -10,6 +10,8 @@
 #include <jni.h>
 #include <string>
 #include <android/log.h>
+#include <queue>
+#include <unistd.h>
 //extern "C" 主要作用就是为了能够正确实现C++代码调用其他C语言代码 加上extern "C"后，会指示编译器这部分代码按C语言的进行编译，而不是C++的。
 extern "C" {
 
@@ -21,9 +23,9 @@ extern "C" {
 #include "libswscale/swscale.h"
 //用于android 绘制图像的
 #include <android/native_window_jni.h>
-#include <unistd.h>
+
 #include <libswresample/swresample.h>
-#include <queue>
+
 #include "Log.h"
 };
 

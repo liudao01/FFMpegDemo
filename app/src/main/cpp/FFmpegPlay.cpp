@@ -18,42 +18,56 @@ void *process(void *args) {
     //1.注册组件
     av_register_all();
     avformat_network_init();//和本地的不同
+    LOGE("avformat_network_init");
     //封装格式上下文
     AVFormatContext *pFormatCtx = avformat_alloc_context();
+    LOGE("封装格式上下文");
+    LOGE("path %s", path);
 
     //2.打开输入视频文件
     if (avformat_open_input(&pFormatCtx, path, NULL, NULL) != 0) {
         LOGE("%s", "打开输入视频文件失败");
+    } else {
+        LOGE("打开输入视频文件成功");
     }
+
     //3.获取视频信息
     if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
         LOGE("%s", "获取视频信息失败");
+    } else {
+        LOGE("获取视频信息成功");
     }
 
     //视频解码，需要找到视频和音频对应的AVStream所在pFormatCtx->streams的索引位置
     int i = 0;
+    LOGE("看下有几个流 %d", pFormatCtx->nb_streams)
     for (; i < pFormatCtx->nb_streams; i++) {
         //4.获取视频解码器
         AVCodecContext *pCodeCtx = pFormatCtx->streams[i]->codec;
         AVCodec *pCodec = avcodec_find_decoder(pCodeCtx->codec_id);
-        if (avcodec_open2(pCodeCtx, pCodec, NULL) < 0) {
-            LOGE("%s", "解码器无法打开");
+        if (avcodec_open2(pCodeCtx, pCodec, NULL)) {
+            LOGE("解码成功");
+        } else {
+            LOGE("解码失败");
         }
         //根据类型判断，是否是视频流
         if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             /*找到视频流*/
             video->setAvCodecContext(pCodeCtx);
             video->index = i;
+            LOGE("找到视频流");
 
         } else if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
             //找到音频流
             audio->setAvCodecContext(pCodeCtx);
             audio->index = i;
+            LOGE("找到音频流");
         }
+
     }
 
     //开启音频 视频  循环播放
-
+    LOGE("开启音频 视频");
     video->play();
     audio->play();
     isPlay = 1;
@@ -70,9 +84,11 @@ void *process(void *args) {
         }
         //销毁packet产生的内存
         av_packet_unref(packet);
+        sleep(1);
+        LOGE("视频解码中");
     }
 
-
+    LOGE("视频解码完成");
     //视频解码完成 可能视频播放完 也可能视频没播放玩
     isPlay = 0;
     //释放
@@ -89,6 +105,7 @@ void *process(void *args) {
 }
 
 void play(char *url) {
+    path = url;
     //实例化对象
     video = new FFmpegVideo();
     audio = new FFmpegAudio();

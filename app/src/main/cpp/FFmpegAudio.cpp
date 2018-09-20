@@ -13,13 +13,15 @@ int FFmpegAudio::get(AVPacket *packet) {
     //取出音频帧
     while (isPlay) {
         if (!quequ.empty()) {
-            LOGE("取出队列packet")
+            LOGE("取出音频队列packet")
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
             if (av_packet_ref(packet, quequ.front()) < 0) {
                 //取出失败
+                LOGE("取出音频失败");
                 break;
             } else {
                 //取出成功 出队 销毁packet
+                LOGE("取出成功 出队 音频销毁packet");
                 AVPacket *pkt = quequ.front();
                 quequ.pop();
                 av_free_packet(pkt);
@@ -27,12 +29,13 @@ int FFmpegAudio::get(AVPacket *packet) {
             }
         } else {
             //队列为空 阻塞等待
+            LOGE("队列为空 阻塞等待");
             pthread_cond_wait(&cond, &mutex);
         }
     }
-
-
-    return 1;
+    //解锁
+    pthread_mutex_unlock(&mutex);
+    return 0;
 }
 
 //生产者
@@ -46,8 +49,9 @@ int FFmpegAudio::put(AVPacket *packet) {
     }
 
     //锁住
+    LOGE("入队压入一帧音频数据=========");
+    //加锁
     pthread_mutex_lock(&mutex);
-    LOGE("入队压入一帧数据");
     quequ.push(packet1);
     //发通知
     pthread_cond_signal(&cond);
@@ -80,6 +84,7 @@ void *play_audio(void *arg) {
     int channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
     int got_frame;
     //轮询去取音频帧
+    LOGE("轮询去取音频帧");
     while (audio->isPlay) {
         //取音频帧
         audio->get(packet);
@@ -87,6 +92,7 @@ void *play_audio(void *arg) {
         avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
         if (got_frame) {
             LOGE("解码音频帧");
+            LOGE("消费一帧音频数据");
             //把frame 数据转换到缓冲区里面来
             swr_convert(swrContext, &out_buffer, 44100 * 2 * 2,
                         (const uint8_t **) (frame->data), frame->nb_samples);
@@ -94,8 +100,8 @@ void *play_audio(void *arg) {
             int out_buffer_siza = av_samples_get_buffer_size(NULL, channels, frame->nb_samples,
                                                              AV_SAMPLE_FMT_S16, 1);
             //得到了pcm的out_butter缓冲区 可以播放了
-
         }
+
     }
     LOGE("初始化FFmpeg完毕");
     return 0;
@@ -104,6 +110,7 @@ void *play_audio(void *arg) {
 void FFmpegAudio::play() {
     isPlay = 1;
     //开启一个解码音频的线程
+    LOGE("开启音频解码线程");
     pthread_create(&p_playid, NULL, play_audio, this);
 }
 
@@ -111,8 +118,9 @@ void FFmpegAudio::stop() {
 
 }
 
+//设置上下文
 void FFmpegAudio::setAvCodecContext(AVCodecContext *codecContext) {
-    codec = codecContext;
+    this->codec = codecContext;
 }
 
 FFmpegAudio::FFmpegAudio() {

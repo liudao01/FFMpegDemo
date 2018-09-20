@@ -4,18 +4,19 @@
 
 #ifndef FFMPEGDEMO_FFMPEGVIDEO_H
 #define FFMPEGDEMO_FFMPEGVIDEO_H
-
+#include <unistd.h>
 #endif //FFMPEGDEMO_FFMPEGVIDEO_H
+
+#include <queue>
+
 extern "C"
 {
 #include <pthread.h>
-#include <libswresample/swresample.h>
 #include <libswscale/swscale.h>
-
-#include <libavcodec/avcodec.h>
-#include <sys/types.h>
-#include <queue>
+#include <libavformat/avformat.h>
 #include "Log.h"
+#include <libavcodec/avcodec.h>
+
 
 class FFmpegVideo {
 public:
@@ -23,38 +24,32 @@ public:
 
     ~FFmpegVideo();
 
-    //出队  队列
     int get(AVPacket *packet);
 
-    //入队
     int put(AVPacket *packet);
 
-    //播放
     void play();
 
-    //停止
     void stop();
 
-    //设置解码器上下文
     void setAvCodecContext(AVCodecContext *codecContext);
 
-//成员变量 属性
 public:
-    //是否正在播放
+    //    是否正在播放
     int isPlay;
-    //流的索引
+//    流索引
     int index;
-    //音频队列 queue 系统的
-    std::queue<AVPacket *> quequ;
-    //处理线程
+//音频队列
+    std::queue<AVPacket *> queue;
+//    处理线程
     pthread_t p_playid;
-
-    //解码器上下文
+//    解码器上下文
     AVCodecContext *codec;
 
-    //加锁
+//    同步锁
     pthread_mutex_t mutex;
-    //条件变量
+//    条件变量
     pthread_cond_t cond;
 };
-};
+
+}

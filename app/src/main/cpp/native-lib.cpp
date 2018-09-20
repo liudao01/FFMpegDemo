@@ -21,6 +21,16 @@ extern "C" {
 #include "FFmpegMusic.h"
 #include "FFmpegPlay.h"
 
+
+//const char *path;
+//FFmpegVideo *video;
+//FFmpegAudio *audio;
+//
+//pthread_t p_tid;//解码线程
+//
+//int isPlay = 0; //播放状态
+//解码函数
+
 #define LOGI(FORMAT, ...) __android_log_print(ANDROID_LOG_INFO,"jnilib",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT, ...) __android_log_print(ANDROID_LOG_ERROR,"jnilib",FORMAT,##__VA_ARGS__);
 
