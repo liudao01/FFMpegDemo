@@ -26,27 +26,31 @@ int FFmpegVideo::get(AVPacket *packet) {
         if (!queue.empty()) {
             LOGE("取出视频队列packet")
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
-            if (av_packet_ref(packet, queue.front()) < 0) {
+            if (av_packet_ref(packet, queue.front())) {
                 //取出失败
                 LOGE("取出视频失败");
                 break;
             } else {
-                LOGE("取出成功出队 视频销毁packet");
+                LOGE("取出成功出队 视频销毁packet==========");
                 //取出成功 出队 销毁packet
                 AVPacket *pkt = queue.front();
                 queue.pop();
-                av_free_packet(pkt);
+                av_free(pkt);
+                LOGE("释放完视频AVPacket");
                 break;
             }
         } else {
             LOGE("视频队列为空 阻塞等待");
             //队列为空 阻塞等待
             pthread_cond_wait(&cond, &mutex);
+            LOGE("看下是否正在等待");
         }
     }
 
     //解锁
+    LOGE("解锁");
     pthread_mutex_unlock(&mutex);
+    LOGE("解锁完毕");
     return 0;
 }
 
@@ -62,6 +66,7 @@ int FFmpegVideo::put(AVPacket *packet) {
     LOGE("入队压入一帧视频数据=======");
     //加锁
     pthread_mutex_lock(&mutex);
+
     queue.push(packet1);
     //发通知
     pthread_cond_signal(&cond);
@@ -111,7 +116,7 @@ void *play_video(void *arg) {
         LOGE("视频解码 %d", len);
 
 //        转码成rgb
-        sws_scale(sws_ctx, (const uint8_t *const *) frame->data, frame->linesize, 0,
+        sws_scale(sws_ctx, (const uint8_t *const *) (frame->data), frame->linesize, 0,
                   vedio->codec->height,
                   rgb_frame->data, rgb_frame->linesize);
 

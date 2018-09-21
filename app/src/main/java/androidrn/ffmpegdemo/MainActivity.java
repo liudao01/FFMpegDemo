@@ -82,7 +82,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         editUrl = findViewById(R.id.edit_url);
-        editUrl.setText("rtmp://live.hkstv.hk.lxdns.com/live/hks");
+        editUrl.setText("http://ivi.bupt.edu.cn/hls/cctv3hd.m3u8");
+//        editUrl.setText("http://hls.yy.com/newlive/54880976_54880976.m3u8?org=yyweb&appid=0&uuid=4098f659e2674f3aa78eb5e0c3bb6560&t=1537501042&tk=e5d887f57117f7797dacdb3da30dbd03&uid=0&ex_audio=0&ex_coderate=1200&ex_spkuid=0");
+//        editUrl.setText("rtmp://live.hkstv.hk.lxdns.com/live/hks");
 
     }
 

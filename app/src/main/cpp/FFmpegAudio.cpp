@@ -13,24 +13,29 @@ int FFmpegAudio::get(AVPacket *packet) {
     //取出音频帧
     while (isPlay) {
         if (!quequ.empty()) {
-            LOGE("取出音频队列packet")
+            LOGE("取出音频队列")
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
-            if (av_packet_ref(packet, quequ.front()) < 0) {
+            if (av_packet_ref(packet, quequ.front())) {
                 //取出失败
                 LOGE("取出音频失败");
                 break;
             } else {
                 //取出成功 出队 销毁packet
-                LOGE("取出成功 出队 音频销毁packet");
+                LOGE("出队中 音频销毁packet===========");
                 AVPacket *pkt = quequ.front();
+
+                LOGE("AVPacket 临时的");
                 quequ.pop();
+                LOGE("出队");
                 av_free_packet(pkt);
+                LOGE("释放pkt 取出成功 出队 音频销毁packet");
                 break;
             }
         } else {
             //队列为空 阻塞等待
             LOGE("队列为空 阻塞等待");
             pthread_cond_wait(&cond, &mutex);
+            LOGE("不等待了 Audio ");
         }
     }
     //解锁
@@ -104,7 +109,6 @@ void *play_audio(void *arg) {
 
     }
     LOGE("初始化FFmpeg完毕");
-    return 0;
 }
 
 void FFmpegAudio::play() {

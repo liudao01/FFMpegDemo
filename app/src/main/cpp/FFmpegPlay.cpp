@@ -31,6 +31,8 @@ void *process(void *args) {
         LOGE("打开输入视频文件成功");
     }
 
+    LOGE(" 看下pFormatCtx  = %p", &pFormatCtx)
+   //    LOGE(" 看下pFormatCtx 2  = %p", pFormatCtx)
     //3.获取视频信息
     if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
         LOGE("%s", "获取视频信息失败");
@@ -85,23 +87,26 @@ void *process(void *args) {
         //销毁packet产生的内存
         av_packet_unref(packet);
         sleep(1);
-        LOGE("视频解码中");
+        LOGE("地址解码中");
     }
 
-    LOGE("视频解码完成");
+
     //视频解码完成 可能视频播放完 也可能视频没播放玩
     isPlay = 0;
-    //释放
-    av_free_packet(packet);
-    avformat_free_context(pFormatCtx);
-
-
+    //先播放
     if (video && video->isPlay) {
         video->stop();
     }
     if (audio && audio->isPlay) {
         audio->stop();
     }
+    LOGE("全部视频解码完成");
+    //播放完了再释放
+    av_free_packet(packet);
+    avformat_free_context(pFormatCtx);
+    pthread_exit(0);
+
+
 }
 
 void play(char *url) {
