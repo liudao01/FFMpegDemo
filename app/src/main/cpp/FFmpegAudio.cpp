@@ -12,20 +12,28 @@ int FFmpegAudio::get(AVPacket *packet) {
 
     //取出音频帧
     while (isPlay) {
-        if (!quequ.empty()) {
-            LOGE("取出音频队列")
+        if (!queue.empty()) {
+            LOGE("执行取出音频队列操作")
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
-            if (av_packet_ref(packet, quequ.front())) {
-                //取出失败
-                LOGE("取出音频失败");
+            int result = 0;
+            try {
+                LOGE("取出中")
+                result = av_packet_ref(packet, queue.front());
+                LOGE("取出成功")
+            } catch (...) {
+                LOGE("执行取出音频队列时候异常")
+            }
+            if (result) {
+                //clone失败
+                LOGE("get  clone 失败");
                 break;
             } else {
                 //取出成功 出队 销毁packet
                 LOGE("出队中 音频销毁packet===========");
-                AVPacket *pkt = quequ.front();
+                AVPacket *pkt = queue.front();
 
                 LOGE("AVPacket 临时的");
-                quequ.pop();
+                queue.pop();
                 LOGE("出队");
                 av_free_packet(pkt);
                 LOGE("释放pkt 取出成功 出队 音频销毁packet");
@@ -48,16 +56,19 @@ int FFmpegAudio::put(AVPacket *packet) {
     //入队  传参一般要新建一个赋值 因为原来的参数有可能销毁.
     AVPacket *packet1 = (AVPacket *) (av_malloc(sizeof(AVPacket)));
     //克隆一下
-    if (av_packet_ref(packet1, packet)) {
-        //克隆失败
-        return 0;
+    try {
+        if (av_packet_ref(packet1, packet)) {
+            //克隆失败
+            return 0;
+        }
+    } catch (...) {
+        LOGE("put  audio 克隆异常");
     }
-
     //锁住
     LOGE("入队压入一帧音频数据=========");
     //加锁
     pthread_mutex_lock(&mutex);
-    quequ.push(packet1);
+    queue.push(packet1);
     //发通知
     pthread_cond_signal(&cond);
 
@@ -68,7 +79,7 @@ int FFmpegAudio::put(AVPacket *packet) {
 
 //线程的函数播放
 void *play_audio(void *arg) {
-    LOGE("开启音频线程");
+    LOGE("线程的函数播放");
     FFmpegAudio *audio = (FFmpegAudio *) arg;
     AVFrame *frame = av_frame_alloc();
     AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
@@ -91,20 +102,26 @@ void *play_audio(void *arg) {
     //轮询去取音频帧
     LOGE("轮询去取音频帧");
     while (audio->isPlay) {
-        //取音频帧
-        audio->get(packet);
-        //把packet数据转化成frame
-        avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
-        if (got_frame) {
-            LOGE("解码音频帧");
-            LOGE("消费一帧音频数据");
-            //把frame 数据转换到缓冲区里面来
-            swr_convert(swrContext, &out_buffer, 44100 * 2 * 2,
-                        (const uint8_t **) (frame->data), frame->nb_samples);
-            //求出音频大小
-            int out_buffer_siza = av_samples_get_buffer_size(NULL, channels, frame->nb_samples,
-                                                             AV_SAMPLE_FMT_S16, 1);
-            //得到了pcm的out_butter缓冲区 可以播放了
+        if (packet == NULL) {
+
+            LOGE("packet 为空");
+        } else {
+            //取音频帧
+            audio->get(packet);
+            //把packet数据转化成frame
+            avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
+            if (got_frame) {
+                LOGE("消费一帧音频数据");
+                //把frame 数据转换到缓冲区里面来
+                swr_convert(swrContext, &out_buffer, 44100 * 2 * 2,
+                            (const uint8_t **) (frame->data), frame->nb_samples);
+                //求出音频大小
+                int out_buffer_siza = av_samples_get_buffer_size(NULL, channels, frame->nb_samples,
+                                                                 AV_SAMPLE_FMT_S16, 1);
+                //得到了pcm的out_butter缓冲区 可以播放了
+            }
+            LOGE("音频got_frame = %d", got_frame);
+
         }
 
     }

@@ -59,7 +59,7 @@ public:
     //流的索引
     int index;
     //音频队列 queue 系统的
-    std::queue<AVPacket *> quequ;
+    std::queue<AVPacket *> queue;
     //处理线程
     pthread_t p_playid;
 

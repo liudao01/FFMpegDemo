@@ -25,10 +25,17 @@ int FFmpegVideo::get(AVPacket *packet) {
     while (isPlay) {
         if (!queue.empty()) {
             LOGE("取出视频队列packet")
+            int result = 0;
+            try {
+                result = av_packet_ref(packet, queue.front());
+            } catch (const char* msg) {
+                LOGE("执行取出视频队列时候异常 %c",msg)
+            }
+
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
-            if (av_packet_ref(packet, queue.front())) {
-                //取出失败
-                LOGE("取出视频失败");
+            if (result) {
+                //clone失败
+                LOGE("get video clone 失败");
                 break;
             } else {
                 LOGE("取出成功出队 视频销毁packet==========");
@@ -41,6 +48,7 @@ int FFmpegVideo::get(AVPacket *packet) {
             }
         } else {
             LOGE("视频队列为空 阻塞等待");
+
             //队列为空 阻塞等待
             pthread_cond_wait(&cond, &mutex);
             LOGE("看下是否正在等待");
@@ -58,11 +66,14 @@ int FFmpegVideo::put(AVPacket *packet) {
     //入队  传参一般要新建一个赋值 因为原来的参数有可能销毁.
     AVPacket *packet1 = (AVPacket *) (av_malloc(sizeof(AVPacket)));
     //克隆一下
-    if (av_packet_ref(packet1, packet)) {
-        //克隆失败
-        return 0;
+    try {
+        if (av_packet_ref(packet1, packet)) {
+            //克隆失败
+            return 0;
+        }
+    } catch (...) {
+        LOGE("put video 克隆异常");
     }
-
     LOGE("入队压入一帧视频数据=======");
     //加锁
     pthread_mutex_lock(&mutex);
@@ -109,7 +120,7 @@ void *play_video(void *arg) {
     //6.一帧一帧读取压缩的视频数据AVPacket
     while (vedio->isPlay) {
         LOGE("视频 解码  一帧");
-        LOGE("消费音频数据===================");
+        LOGE("准备调用vedio->get消费视频数据===================");
 //        消费者取到一帧数据  没有 阻塞 vedio->get
         vedio->get(packet);
         len = avcodec_decode_video2(vedio->codec, frame, &got_frame, packet);
@@ -123,7 +134,7 @@ void *play_video(void *arg) {
         LOGE("转码成rgb");
 //        得到了rgb_frame  绘制   frame  rgb     pcm  frame
 
-
+        LOGE("视频got_frame = %d", got_frame);
 
     }
 

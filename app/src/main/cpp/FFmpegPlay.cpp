@@ -32,7 +32,7 @@ void *process(void *args) {
     }
 
     LOGE(" 看下pFormatCtx  = %p", &pFormatCtx)
-   //    LOGE(" 看下pFormatCtx 2  = %p", pFormatCtx)
+    //    LOGE(" 看下pFormatCtx 2  = %p", pFormatCtx)
     //3.获取视频信息
     if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
         LOGE("%s", "获取视频信息失败");
@@ -76,18 +76,25 @@ void *process(void *args) {
     //解码Packet
     AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
     //子线程 解码
-    while (isPlay && av_read_frame(pFormatCtx, packet) == 0) {
-        //判断packet 的流索引 和视频流索引相等 那么添加到视频队列中
-        if (video && video->isPlay && packet->stream_index == video->index) {
-            video->put(packet);
-        } else if (audio && audio->isPlay && packet->stream_index == audio->index) {
-            //如果是音频流 同样添加到音频队列中
-            audio->put(packet);
+    int ret;
+    while (isPlay) {
+        ret = av_read_frame(pFormatCtx, packet);
+        if (ret == 0) {
+
+            //判断packet 的流索引 和视频流索引相等 那么添加到视频队列中
+            if (video && video->isPlay && packet->stream_index == video->index) {
+                video->put(packet);
+            } else if (audio && audio->isPlay && packet->stream_index == audio->index) {
+                //如果是音频流 同样添加到音频队列中
+                audio->put(packet);
+            }
+            //销毁packet产生的内存
+            av_packet_unref(packet);
+            sleep(1);
+            LOGE("地址解码中");
+        } else {
+            LOGI("解码完了");
         }
-        //销毁packet产生的内存
-        av_packet_unref(packet);
-        sleep(1);
-        LOGE("地址解码中");
     }
 
 
