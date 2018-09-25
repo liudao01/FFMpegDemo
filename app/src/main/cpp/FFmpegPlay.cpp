@@ -88,9 +88,9 @@ void *process(void *args) {
                 //如果是音频流 同样添加到音频队列中
                 audio->put(packet);
             }
+            sleep(1);
             //销毁packet产生的内存
             av_packet_unref(packet);
-            sleep(1);
             LOGE("地址解码中");
         } else {
             LOGI("解码完了");
