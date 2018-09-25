@@ -29,7 +29,7 @@ extern "C" {
 #include "Log.h"
 };
 
-
+#endif //FFMPEGDEMO_FFMPEGAUDIO_H
 
 class FFmpegAudio {
 public:
@@ -72,4 +72,3 @@ public:
     pthread_cond_t cond;
 
 };
-#endif //FFMPEGDEMO_FFMPEGAUDIO_H

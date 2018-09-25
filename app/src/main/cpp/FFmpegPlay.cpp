@@ -83,9 +83,12 @@ void *process(void *args) {
 
             //判断packet 的流索引 和视频流索引相等 那么添加到视频队列中
             if (video && video->isPlay && packet->stream_index == video->index) {
+                LOGE("如果是视频流 添加到视频队列中");
                 video->put(packet);
             } else if (audio && audio->isPlay && packet->stream_index == audio->index) {
                 //如果是音频流 同样添加到音频队列中
+                LOGE("如果是音频流 添加到音频队列中");
+
                 audio->put(packet);
             }
             sleep(1);

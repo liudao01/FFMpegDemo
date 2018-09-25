@@ -35,13 +35,13 @@ int FFmpegAudio::get(AVPacket *packet) {
                 LOGE("AVPacket 临时的");
                 queue.pop();
                 LOGE("出队");
-                av_free_packet(pkt);
+                av_free(pkt);
                 LOGE("释放pkt 取出成功 出队 音频销毁packet");
                 break;
             }
         } else {
             //队列为空 阻塞等待
-            LOGE("队列为空 阻塞等待");
+            LOGE("音频队列为空 阻塞等待");
             pthread_cond_wait(&cond, &mutex);
             LOGE("不等待了 Audio ");
         }
