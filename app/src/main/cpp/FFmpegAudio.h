@@ -12,6 +12,9 @@
 #include <android/log.h>
 #include <queue>
 #include <unistd.h>
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
+#include "Log.h"
 //extern "C" 主要作用就是为了能够正确实现C++代码调用其他C语言代码 加上extern "C"后，会指示编译器这部分代码按C语言的进行编译，而不是C++的。
 extern "C" {
 
@@ -26,7 +29,7 @@ extern "C" {
 
 #include <libswresample/swresample.h>
 
-#include "Log.h"
+
 };
 
 #endif //FFMPEGDEMO_FFMPEGAUDIO_H
@@ -51,6 +54,10 @@ public:
 
     //设置解码器上下文
     void setAvCodecContext(AVCodecContext *codecContext);
+    //创建播放器
+    int createPlayer();
+//    //配置ffmpeg的参数
+//    int createFFmpeg(FFmpegAudio *audio);
 
 //成员变量 属性
 public:
@@ -70,5 +77,22 @@ public:
     pthread_mutex_t mutex;
     //条件变量
     pthread_cond_t cond;
+    /**
+     * 新增
+     */
+    SwrContext *swrContext;
+    uint8_t *out_buffer;
+    int out_channer_nb;
+
+
+    SLObjectItf engineObject;
+    SLEngineItf engineEngine;
+    SLEnvironmentalReverbItf outputMixEnvironmentalReverb;
+    SLObjectItf outputMixObject;
+    SLObjectItf bqPlayerObject;
+    SLEffectSendItf bqPlayerEffectSend;
+    SLVolumeItf bqPlayerVolume;
+    SLPlayItf bqPlayerPlay;
+    SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
 
 };

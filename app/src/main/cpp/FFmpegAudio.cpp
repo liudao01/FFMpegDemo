@@ -4,6 +4,180 @@
 
 #include "FFmpegAudio.h"
 
+/**
+ * 获取pcm数据
+ * @param pcm 二级指针 可以修改(缓冲区数组的地址)
+ * @param size  大小
+ * @return
+ */
+int getPcm(FFmpegAudio *audio) {
+    int got_frame;
+    int out_buffer_size;
+    int count = 0;
+    AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+    AVFrame *frame = av_frame_alloc();
+    int out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
+    //读取frame
+    while (audio->isPlay) {
+
+
+        out_buffer_size = 0;
+        //获取数据
+        audio->get(packet);
+        //解码  现在编码格式frame 需要转化成pcm
+        int ret = avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
+        LOGE("正在解码 %d", count++);
+        if (ret < 0) {
+            LOGE("解码完成");
+        }
+        //解码一帧
+        if (got_frame) {
+            //真正的解码
+            LOGE("开始解码");
+            //转换得到out_buffer
+            swr_convert(audio->swrContext, &audio->out_buffer, 44100 * 2,
+                        (const uint8_t **) (frame->data), frame->nb_samples);
+
+            LOGE("转换得到out_buffer");
+            //求缓冲区实际的大小  通道数  frame->nb_samples 采样的点
+            out_buffer_size = av_samples_get_buffer_size(NULL, out_channer_nb, frame->nb_samples,
+                                                         AV_SAMPLE_FMT_S16, 1);
+            LOGE("求缓冲区实际的大小 %d", out_buffer_size);
+            break;
+        }
+
+    }
+    LOGE("完成");
+    //释放
+    av_free(packet);
+    av_frame_free(&frame);
+
+    return out_buffer_size;
+}
+
+//第一次主动调用在调用线程
+//之后在新线程中回调
+//当喇叭播放完声音回调此函数,添加pcm数据到缓冲区
+void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
+    FFmpegAudio *audio = (FFmpegAudio *) context;
+    int bufferSize = getPcm(audio);//获取pcm数据
+    if (bufferSize > 0) {
+        SLresult result;//结果
+        //播放帧
+        result = (*bq)->Enqueue(bq, audio->out_buffer, bufferSize);
+        LOGE("回调 bqPlayerCallback : %d", result);
+    } else {
+        LOGE("获取PCM失败")
+    }
+}
+
+void createFFmpeg(FFmpegAudio *audio) {
+//    mp3  里面所包含的编码格式   转换成  pcm   SwcContext
+    audio->swrContext = swr_alloc();
+
+    int length = 0;
+    int got_frame;
+//    44100*2
+    audio->out_buffer = (uint8_t *) av_malloc(44100 * 2);
+    uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+//    输出采样位数  16位
+    enum AVSampleFormat out_formart = AV_SAMPLE_FMT_S16;
+//输出的采样率必须与输入相同
+    int out_sample_rate = audio->codec->sample_rate;
+
+
+    swr_alloc_set_opts(audio->swrContext, out_ch_layout, out_formart, out_sample_rate,
+                       audio->codec->channel_layout, audio->codec->sample_fmt,
+                       audio->codec->sample_rate, 0,
+                       NULL);
+
+    swr_init(audio->swrContext);
+//    获取通道数  2
+    audio->out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
+    LOGE("------>通道数%d  ", audio->out_channer_nb);
+}
+
+
+int FFmpegAudio::createPlayer() {
+    SLresult result;
+    // 创建引擎engineObject
+    result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    if (SL_RESULT_SUCCESS != result) {
+        return 0;
+    }
+    // 实现引擎engineObject
+    result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
+    if (SL_RESULT_SUCCESS != result) {
+        return 0;
+    }
+    // 获取引擎接口engineEngine
+    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE,
+                                           &engineEngine);
+    if (SL_RESULT_SUCCESS != result) {
+        return 0;
+    }
+    // 创建混音器outputMixObject
+    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0,
+                                              0, 0);
+    if (SL_RESULT_SUCCESS != result) {
+        return 0;
+    }
+    // 实现混音器outputMixObject
+    result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
+    if (SL_RESULT_SUCCESS != result) {
+        return 0;
+    }
+    result = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
+                                              &outputMixEnvironmentalReverb);
+    const SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;
+    if (SL_RESULT_SUCCESS == result) {
+        (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
+                outputMixEnvironmentalReverb, &settings);
+    }
+
+
+    //======================
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
+                                                            2};
+    SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1, SL_PCMSAMPLEFORMAT_FIXED_16,
+                            SL_PCMSAMPLEFORMAT_FIXED_16,
+                            SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
+                            SL_BYTEORDER_LITTLEENDIAN};
+//   新建一个数据源 将上述配置信息放到这个数据源中
+    SLDataSource slDataSource = {&android_queue, &pcm};
+//    设置混音器
+    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
+
+    SLDataSink audioSnk = {&outputMix, NULL};
+    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND,
+            /*SL_IID_MUTESOLO,*/ SL_IID_VOLUME};
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+            /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_TRUE};
+    //先讲这个
+    (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &slDataSource,
+                                       &audioSnk, 2,
+                                       ids, req);
+    //初始化播放器
+    (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
+
+//    得到接口后调用  获取Player接口
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
+
+//    注册回调缓冲区 //获取缓冲队列接口
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
+                                    &bqPlayerBufferQueue);
+    //缓冲接口回调
+    (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, this);
+//    获取音量接口
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+
+//    获取播放状态接口
+    (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
+
+    bqPlayerCallback(bqPlayerBufferQueue, this);
+    return 1;
+}
+
 
 //消费者
 int FFmpegAudio::get(AVPacket *packet) {
@@ -14,33 +188,24 @@ int FFmpegAudio::get(AVPacket *packet) {
     while (isPlay) {
         if (!queue.empty()) {
             LOGE("执行取出音频队列操作")
-            //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
-            int result = 0;
-            try {
-                LOGE("取出中")
-                result = av_packet_ref(packet, queue.front());
-                LOGE("取出成功")
-            } catch (...) {
-                LOGE("执行取出音频队列时候异常")
-            }
-            if (result) {
-                //clone失败
-                LOGE("get  clone 失败");
+            if (!queue.empty()) {
+//            从队列取出一个packet   clone一个 给入参对象
+                if (av_packet_ref(packet, queue.front())) {
+                    break;
+                }
+//            取成功了  弹出队列  销毁packet
+                AVPacket *pkt = queue.front();
+                LOGE("取出一 个音频帧%d", queue.size());
+                queue.pop();
+                av_free(pkt);
+                LOGE("释放pkt");
                 break;
             } else {
-                //取出成功 出队 销毁packet
-                LOGE("出队中 音频销毁packet===========");
-                AVPacket *pkt = queue.front();
-
-                LOGE("AVPacket 临时的");
-                queue.pop();
-                LOGE("出队");
-                av_free(pkt);
-                LOGE("释放pkt 取出成功 出队 音频销毁packet");
-                break;
+//            如果队列里面没有数据的话  一直等待阻塞
+                pthread_cond_wait(&cond, &mutex);
             }
         } else {
-            //队列为空 阻塞等待
+            //队列为空 阻塞等待h
             LOGE("音频队列为空 阻塞等待");
             pthread_cond_wait(&cond, &mutex);
             LOGE("不等待了 Audio ");
@@ -79,53 +244,11 @@ int FFmpegAudio::put(AVPacket *packet) {
 
 //线程的函数播放
 void *play_audio(void *arg) {
-    LOGE("线程的函数播放");
+
     FFmpegAudio *audio = (FFmpegAudio *) arg;
-    AVFrame *frame = av_frame_alloc();
-    AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
-    //    mp3  里面所包含的编码格式   转换成  pcm
-    SwrContext *swrContext = swr_alloc();
-    int length = 0;
-    //    输出采样位数
-    //输出的采样率必须与输入相同
-
-    swr_alloc_set_opts(swrContext, AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16,
-                       audio->codec->sample_rate,
-                       audio->codec->channel_layout, audio->codec->sample_fmt,
-                       audio->codec->sample_rate, 0,
-                       0);
-    swr_init(swrContext);
-    uint8_t *out_buffer = (uint8_t *) av_malloc(44100 * 2 * 2);
-    //获取通道数
-    int channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
-    int got_frame;
-    //轮询去取音频帧
-    LOGE("轮询去取音频帧");
-    while (audio->isPlay) {
-        if (packet == NULL) {
-
-            LOGE("packet 为空");
-        } else {
-            //取音频帧
-            audio->get(packet);
-            //把packet数据转化成frame
-            avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
-            if (got_frame) {
-                LOGE("消费一帧音频数据");
-                //把frame 数据转换到缓冲区里面来
-                swr_convert(swrContext, &out_buffer, 44100 * 2 * 2,
-                            (const uint8_t **) (frame->data), frame->nb_samples);
-                //求出音频大小
-                int out_buffer_siza = av_samples_get_buffer_size(NULL, channels, frame->nb_samples,
-                                                                 AV_SAMPLE_FMT_S16, 1);
-                //得到了pcm的out_butter缓冲区 可以播放了
-            }
-            LOGE("音频got_frame = %d", got_frame);
-
-        }
-
-    }
-    LOGE("初始化FFmpeg完毕");
+    //这里是阻塞的
+    audio->createPlayer();
+    pthread_exit(0);
 }
 
 void FFmpegAudio::play() {
@@ -142,6 +265,7 @@ void FFmpegAudio::stop() {
 //设置上下文
 void FFmpegAudio::setAvCodecContext(AVCodecContext *codecContext) {
     this->codec = codecContext;
+    createFFmpeg(this);
 }
 
 FFmpegAudio::FFmpegAudio() {
@@ -154,3 +278,4 @@ FFmpegAudio::FFmpegAudio() {
 FFmpegAudio::~FFmpegAudio() {
 
 }
+

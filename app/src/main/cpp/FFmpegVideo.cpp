@@ -28,8 +28,8 @@ int FFmpegVideo::get(AVPacket *packet) {
             int result = 0;
             try {
                 result = av_packet_ref(packet, queue.front());
-            } catch (const char* msg) {
-                LOGE("执行取出视频队列时候异常 %c",msg)
+            } catch (const char *msg) {
+                LOGE("执行取出视频队列时候异常")
             }
 
             //从队列取出一个packet,clone一个 给入参对象. quequ.front() 返回对队列中第一个元素的引用。此元素将是调用pop（）时要删除的第一个元素
@@ -137,9 +137,9 @@ void *play_video(void *arg) {
         LOGE("视频got_frame = %d", got_frame);
 
     }
-
-
+    return 0;
 }
+
 
 void FFmpegVideo::play() {
     isPlay = 1;

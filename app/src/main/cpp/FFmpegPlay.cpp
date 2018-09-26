@@ -69,8 +69,7 @@ void *process(void *args) {
     }
 
     //开启音频 视频  循环播放
-    LOGE("开启音频 视频");
-    video->play();
+//    video->play();
     audio->play();
     isPlay = 1;
     //解码Packet
@@ -84,14 +83,16 @@ void *process(void *args) {
             //判断packet 的流索引 和视频流索引相等 那么添加到视频队列中
             if (video && video->isPlay && packet->stream_index == video->index) {
                 LOGE("如果是视频流 添加到视频队列中");
-                video->put(packet);
+               // video->put(packet);
             } else if (audio && audio->isPlay && packet->stream_index == audio->index) {
                 //如果是音频流 同样添加到音频队列中
                 LOGE("如果是音频流 添加到音频队列中");
 
                 audio->put(packet);
             }
-            sleep(1);
+//            sleep(1);//睡眠1秒看log
+            //音频的间隔 设定26毫秒
+            usleep(26 * 1000);
             //销毁packet产生的内存
             av_packet_unref(packet);
             LOGE("地址解码中");
