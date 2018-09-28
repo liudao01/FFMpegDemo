@@ -16,6 +16,9 @@ FFmpegVideo::~FFmpegVideo() {
 
 }
 
+//回调
+static void (*video_call)(AVFrame *frame);
+
 int FFmpegVideo::get(AVPacket *packet) {
     LOGE("取数据函数")
     //锁住
@@ -119,22 +122,29 @@ void *play_video(void *arg) {
     AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
     //6.一帧一帧读取压缩的视频数据AVPacket
     while (vedio->isPlay) {
-        LOGE("视频 解码  一帧");
+        LOGE("消费 视频 解码  一帧");
         LOGE("准备调用vedio->get消费视频数据===================");
 //        消费者取到一帧数据  没有 阻塞 vedio->get
         vedio->get(packet);
         len = avcodec_decode_video2(vedio->codec, frame, &got_frame, packet);
         LOGE("视频解码 %d", len);
-
+        //解码失败跳出本次循环
+        if(!got_frame){
+            continue;
+        }
 //        转码成rgb
-        sws_scale(sws_ctx, (const uint8_t *const *) (frame->data), frame->linesize, 0,
+        int code = sws_scale(sws_ctx, (const uint8_t *const *) (frame->data), frame->linesize, 0,
                   vedio->codec->height,
                   rgb_frame->data, rgb_frame->linesize);
 
-        LOGE("转码成rgb");
+        LOGE("转码成rgb 看下是否成功 %d",code);
 //        得到了rgb_frame  绘制   frame  rgb     pcm  frame
 
         LOGE("视频got_frame = %d", got_frame);
+//休眠16毫秒
+        usleep(16 * 1000);
+        //视频是主动绘制
+        video_call(rgb_frame);
 
     }
     return 0;
@@ -154,4 +164,10 @@ void FFmpegVideo::stop() {
 
 void FFmpegVideo::setAvCodecContext(AVCodecContext *codecContext) {
     this->codec = codecContext;
+}
+
+//设置回调函数
+void FFmpegVideo::setPlayCall(void (*call)(AVFrame *)) {
+    video_call = call;
+
 }

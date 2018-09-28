@@ -87,7 +87,7 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     // ====混音器 设置 开始=====
     const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
     const SLboolean mreq[1] = {SL_BOOLEAN_FALSE};
-    sLresult =(*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);
+    sLresult = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);
 //    sLresult = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);
     LOGE("混音器 设置 %d", sLresult);
     //同样切换状态  和上面同样的套路
@@ -156,8 +156,8 @@ Java_androidrn_ffmpegdemo_AudioPlayer_OpenSLEsPlay(JNIEnv *env, jobject instance
     SLDataSink audioSnk = {&outputMix, NULL};
     //声音增大减小 音量 调节输出
     const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
-    const SLboolean req[3]={SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE,SL_BOOLEAN_TRUE};
-    LOGE("引擎  %p",engineEngine);
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+    LOGE("引擎  %p", engineEngine);
     /**
      * SLEngineItf self,    引擎
 		SLObjectItf * pPlayer,  播放器
@@ -861,16 +861,17 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
 }
 
 
+
 /**
  * 音视频同步播放
  */
 extern "C"
 JNIEXPORT void JNICALL
-Java_androidrn_ffmpegdemo_MyVideoView_play(JNIEnv *env, jobject instance, jstring url_) {
+Java_androidrn_ffmpegdemo_VideoPlay_play(JNIEnv *env, jobject instance, jstring url_) {
     const char *url = env->GetStringUTFChars(url_, 0);
-
+    LOGE("传入的url = %s",url);
+    //播放
     play(const_cast<char *>(url));
-    // TODO
 
     env->ReleaseStringUTFChars(url_, url);
 }
@@ -880,8 +881,19 @@ Java_androidrn_ffmpegdemo_MyVideoView_play(JNIEnv *env, jobject instance, jstrin
  */
 extern "C"
 JNIEXPORT void JNICALL
-Java_androidrn_ffmpegdemo_MyVideoView_stop(JNIEnv *env, jobject instance) {
+Java_androidrn_ffmpegdemo_VideoPlay_stop(JNIEnv *env, jobject instance) {
 
     // TODO
+
+}
+/**
+ * 视频播放
+ */
+extern "C"
+JNIEXPORT void JNICALL
+Java_androidrn_ffmpegdemo_VideoPlay_display(JNIEnv *env, jobject instance, jobject surface) {
+
+    // TODO
+    dispaly( env,  instance,  surface);
 
 }

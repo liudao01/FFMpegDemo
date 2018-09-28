@@ -15,11 +15,6 @@ import android.view.SurfaceView;
 public class MyVideoView extends SurfaceView {
 
 
-    // Used to load the 'native-lib' library on application startup.
-    public native void play(String url);
-    public native void stop();
-
-
     public MyVideoView(Context context) {
         super(context);
     }
@@ -52,8 +47,10 @@ public class MyVideoView extends SurfaceView {
         });
     }
 
-    //本地的native方法
+    //本地的native方法 播放
     public native void render(String input, Surface surface);
+
+
 }
 
 

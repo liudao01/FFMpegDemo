@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -46,6 +47,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btChange;
     private LinearLayout llOther;
     private EditText editUrl;
+    private SurfaceView surfaceAndAudio;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btAudio = findViewById(R.id.bt_audio);
         videoView = findViewById(R.id.surface);
         sp_video = findViewById(R.id.sp_video);
+        surfaceAndAudio = findViewById(R.id.surface_and_audio);
+
         //多种格式的视频列表
         String[] videoArray = getResources().getStringArray(R.array.video_list);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
@@ -218,8 +224,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.bt_change:
                 if (llSynchronizationPlay.getVisibility() == View.VISIBLE) {
                     llOther.setVisibility(View.VISIBLE);
+
                     llSynchronizationPlay.setVisibility(View.GONE);
+                    Log.d(TAG, "onClick: 显示前面的");
+                    videoView.setVisibility(View.VISIBLE);
+                    surfaceAndAudio.setVisibility(View.GONE);
                 } else {
+                    Log.d(TAG, "onClick: 显示音视频同步");
+                    videoView.setVisibility(View.GONE);
+                    surfaceAndAudio.setVisibility(View.VISIBLE);
                     llOther.setVisibility(View.GONE);
                     llSynchronizationPlay.setVisibility(View.VISIBLE);
                 }
@@ -227,8 +240,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.bt_play://音视频同步播放
 
                 String text = editUrl.getText().toString();
-                MyVideoView myVideoView = new MyVideoView(this);
-                myVideoView.play(text);
+                Log.d(TAG, "onClick: 传入的路径 = "+text);
+                VideoPlay videoPlay = new VideoPlay();
+                videoPlay.setSurfaceView(surfaceAndAudio);
+                videoPlay.playJava(text);
                 break;
             case R.id.bt_stop://音视频同步停止
                 break;

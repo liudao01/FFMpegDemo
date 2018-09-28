@@ -8,6 +8,7 @@
 #endif //FFMPEGDEMO_FFMPEGVIDEO_H
 
 #include <queue>
+#include "unistd.h"
 
 extern "C"
 {
@@ -32,6 +33,8 @@ public:
 
     void stop();
 
+    void setPlayCall(void(*call)(AVFrame *frame));
+
     void setAvCodecContext(AVCodecContext *codecContext);
 
 public:
@@ -46,6 +49,7 @@ public:
 //    解码器上下文
     AVCodecContext *codec;
 
+    AVRational time_base;
 //    同步锁
     pthread_mutex_t mutex;
 //    条件变量

@@ -20,10 +20,19 @@ int getPcm(FFmpegAudio *audio) {
     //读取frame
     while (audio->isPlay) {
 
-
         out_buffer_size = 0;
         //获取数据
         audio->get(packet);
+        //修正音频  packet->pts就是当前的pts
+        if(packet->pts!=AV_NOPTS_VALUE){
+//            typedef struct AVRational{
+//                int num; ///< numerator  1秒
+//                int den; ///< denominator 25毫秒
+//            } AVRational;
+
+            //假设1S 分成25等份  40ms  那么当前的pts*40毫秒就是当前的时间
+            audio->clock = packet->pts * av_q2d(audio->time_base);//当前的份数 乘以 每份是多少数据
+        }
         //解码  现在编码格式frame 需要转化成pcm
         int ret = avcodec_decode_audio4(audio->codec, frame, &got_frame, packet);
         LOGE("正在解码 %d", count++);
@@ -62,10 +71,16 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
     FFmpegAudio *audio = (FFmpegAudio *) context;
     int bufferSize = getPcm(audio);//获取pcm数据
     if (bufferSize > 0) {
+//        计算时间
+        double time = bufferSize / ((double) 44100 * 2 * 2);
+        //时间累加
+        audio->clock += time;
+        LOGE("播放音频帧 time = %lf  clock = %lf",time,audio->clock);
         SLresult result;//结果
         //播放帧
         result = (*bq)->Enqueue(bq, audio->out_buffer, bufferSize);
-        LOGE("回调 bqPlayerCallback : %d", result);
+        LOGE("回调 bqPlayerCallback 字节 : %d", bufferSize);
+
     } else {
         LOGE("获取PCM失败")
     }
@@ -273,6 +288,8 @@ FFmpegAudio::FFmpegAudio() {
     pthread_mutex_init(&mutex, NULL);
     //条件变量
     pthread_cond_init(&cond, NULL);
+    //初始化音频播放时间
+    clock = 0;
 }
 
 FFmpegAudio::~FFmpegAudio() {

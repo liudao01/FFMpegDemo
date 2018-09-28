@@ -84,6 +84,10 @@ public:
     uint8_t *out_buffer;
     int out_channer_nb;
 
+    //计算音频绝对的时间.
+    double clock;
+    //
+    AVRational time_base;
 
     SLObjectItf engineObject;
     SLEngineItf engineEngine;
