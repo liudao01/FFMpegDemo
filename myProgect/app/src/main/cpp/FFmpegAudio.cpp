@@ -23,7 +23,7 @@ int getPcm(FFmpegAudio *audio) {
         out_buffer_size = 0;
         //获取数据
         audio->get(packet);
-        //修正音频  packet->pts就是当前的pts
+        //修正音频  packet->pts就是当前的pts-
         if(packet->pts!=AV_NOPTS_VALUE){
 //            typedef struct AVRational{
 //                int num; ///< numerator  1秒
