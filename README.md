@@ -46,7 +46,7 @@ extern "C" {
 3. 在手机根目录放个mp4视频
 
 视频信息
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180903/KAKFf4f4EL.png?imageslim)
+![image](//wx2.sinaimg.cn/large/958c5b69ly1fwqaz7tenpj20b40aimx7.jpg)
 
 可以看到:
 - 封装格式mp4
@@ -54,7 +54,7 @@ extern "C" {
 
 大致流程图:
 
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180904/LAc070eE40.png?imageslim)
+![image](//ws4.sinaimg.cn/large/958c5b69ly1fwqaygoiqcj20fd0mv750.jpg)
 
 ## 代码
 
@@ -219,9 +219,9 @@ Java_androidrn_ffmpegdemo_MainActivity_openVideo(JNIEnv *env, jobject instance, 
 
 ## 结果
 
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180903/GkJ6CeIfBK.png?imageslim)
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180903/fjkgC8f28j.png?imageslim)
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180903/K86HHa2h7d.png?imageslim)
+![image](//wx3.sinaimg.cn/large/958c5b69ly1fwqazmzfn7j20lu089jrb.jpg)
+![image](//wx4.sinaimg.cn/large/958c5b69ly1fwqazxxf76j20js07ia9x.jpg)
+![image](//wx1.sinaimg.cn/large/958c5b69ly1fwqb0a9wcfj20hs0ecq3p.jpg)
 ---
 - sws_getContext 函数解析
 
