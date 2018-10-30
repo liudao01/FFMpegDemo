@@ -993,4 +993,4 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
 
 
 
-![mark](http://ovji4jgcd.bkt.clouddn.com/blog/180905/K9L81K7JK5.gif)
+![image](//wx2.sinaimg.cn/large/958c5b69ly1fwqb31eellg20a10lb1ky.gif)
