@@ -499,4 +499,4 @@ Java_androidrn_ffmpegdemo_MyVideoView_render(JNIEnv *env, jobject instance, jstr
 
 
 
-![image](//wx2.sinaimg.cn/large/958c5b69ly1fwqb31eellg20a10lb1ky.gif)
+![image](http://wx2.sinaimg.cn/large/958c5b69ly1fwqb31eellg20a10lb1ky.gif)
