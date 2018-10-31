@@ -2,7 +2,7 @@
 ffmpeg play video from android
 
 
-# 1 利用FFMpeg进行MP3视频转YUV格式
+# 1 利用FFMpeg进行MP4视频转YUV格式
 
 ## 理论:
 
